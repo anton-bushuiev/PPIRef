@@ -1,4 +1,6 @@
+<div align="center">
 # PPIRef
+</div>
 
 <p align="center">
   <img src="assets/readme-dimer-close-up.png"/>
