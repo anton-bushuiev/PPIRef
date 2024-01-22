@@ -156,7 +156,6 @@ idist.embeddings
 >         0.02461776, 0.0313348 , 0.01118212, 0.00447062, 0.01342645])}
 
 # And then query for near-duplicates
-idist.embed(ppis[1])
 idist.query(idist.embeddings['1p7z_A_C'])
 > (array([2.63417803e-09, 2.66141793e-03]),
 >  array(['1p7z_A_C', '3p9r_B_D'], dtype=object))
@@ -216,7 +215,7 @@ If you find this repository useful, please cite our paper or the corresponding e
 @article{
   bushuiev2024learning,
   title={Learning to design protein-protein interactions with enhanced generalization},
-  author={Bushuiev, Anton and Bushuiev, Roman and Filkin, Anatolii and Kouba, Petr and Gabrielova, Marketa and Gabriel, Michal and Sedlar, Jiri and Pluskal, Tomas and Damborsky, Jiri and Mazurenko, Stanislav and others},
+  author={Bushuiev, Anton and Bushuiev, Roman and Kouba, Petr and Filkin, Anatolii and Gabrielova, Marketa and Gabriel, Michal and Sedlar, Jiri and Pluskal, Tomas and Damborsky, Jiri and Mazurenko, Stanislav and others},
   booktitle={The Twelfth International Conference on Learning Representations},
   year={2024}
 }
