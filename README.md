@@ -12,7 +12,7 @@ PPIRef is a Python package for processing and analysing 3D structures of protein
 
 # PPIRef dataset
 
-PPIRef is a complete* and non-redundant dataset of protein-protein interactions (PPIs). It was constructed in three steps: (i) exhaustevily extract all putative protein dimers from PDB based on heavy atom contacts, (ii) filter out not proper PPIs based on buried surface area and other criteria, (iii) remove near-duplicate PPIs with iDist - a fast algorithm accurately approximating PPI alignment-based algorithms such as iAlign. See [our paper](https://arxiv.org/abs/2310.18515) for details.
+PPIRef is a complete* and non-redundant dataset of protein-protein interactions (PPIs). It was constructed in three steps: (i) exhaustevily extract all putative protein dimers from PDB based on heavy atom contacts, (ii) filter out not proper PPIs based on buried surface and quality criteria, (iii) remove near-duplicate PPIs with iDist - a fast algorithm accurately approximating PPI alignment-based algorithms such as iAlign. See [our paper](https://arxiv.org/abs/2310.18515) for details.
 
 <p align="center">
   <img align="right" width="350" src="https://github.com/anton-bushuiev/PPIRef/assets/67932762/f5d12ffb-8d1b-40b8-bab1-23d33a091f05"/>
@@ -26,7 +26,7 @@ The PPIRef dataset can be downloaded from Zenodo (TBD soon). Alternatively, the 
 
 ## Installation
 
-To install the package, clone the repository and run `pip install .` in the root directory. The package was tested with Python 3.9.
+To install the package, clone the repository (`git clone git@github.com:anton-bushuiev/PPIRef.git; cd PPIRef`) and run `pip install .` in the root directory. The package was tested with Python 3.9.
 
 Please see the `external/README.md` directory for the details on how to install the external software for comparing PPIs and calculating buried surface area (BSA).
 
@@ -53,7 +53,7 @@ extractor.extract(pdb_file, partners=['A', 'C'])
 # Extract a contact-based PPI between three specified chains (trimer)
 extractor.extract(pdb_file, partners=['A', 'B', 'C'])
 
-# Extract a complete complex by setting high expansion radius around interface
+# Extract a complete dimer complex by setting high expansion radius around interface
 ppi_complexes_dir = PPIREF_TEST_DATA_DIR / 'ppi_dir_complexes'
 extractor = PPIExtractor(out_dir=ppi_complexes_dir, kind='heavy', radius=6., bsa=False, expansion_radius=1_000_000.)
 extractor.extract(pdb_file, partners=['A', 'C'])
@@ -61,7 +61,7 @@ extractor.extract(pdb_file, partners=['A', 'C'])
 
 ## Analysing PPIs
 
-After the extraction, one can visualize the PPIs via a PyMOL wrapper and get their statistics.
+After the extraction, one can visualize the PPIs via the PyMOL wrapper and get their statistics.
 
 ```python
 from ppiref.visualization import PyMOL
@@ -110,7 +110,7 @@ from ppiref.comparison import IAlign, USalign, IDist
 extractor = PPIExtractor(out_dir=ppi_dir, kind='heavy', radius=6., bsa=False)
 extractor.extract(PPIREF_TEST_DATA_DIR / '1p7z.pdb', partners=['A', 'C'])
 extractor.extract(PPIREF_TEST_DATA_DIR / '3p9r.pdb', partners=['B', 'D'])
-ppis = [PPIREF_TEST_DATA_DIR / 'p7/1p7z_A_C.pdb', PPIREF_TEST_DATA_DIR / 'p9/3p9r_B_D.pdb']
+ppis = [ppi_dir / 'p7/1p7z_A_C.pdb', ppi_dir / 'p9/3p9r_B_D.pdb']
 
 # Compare with iAlign (see external/README.md for installation)
 ialign = IAlign()
@@ -157,7 +157,7 @@ idist.embeddings
 
 # And then query for near-duplicates
 idist.query(idist.embeddings['1p7z_A_C'])
-> (array([2.63417803e-09, 2.66141793e-03]),
+> (array([0.        , 0.00346618]),
 >  array(['1p7z_A_C', '3p9r_B_D'], dtype=object))
 
 # Or directly deduplicate them
@@ -187,7 +187,7 @@ split = read_split('skempi2_iclr24_split')
 split['test'][:3]
 > ['1B3S_A_D', '1B2U_A_D', '1BRS_A_D']
 
-# DIPS set used to train EquiDock
+# DIPS set used to train EquiDock and DiffDock-PP
 split = read_split('dips_equidock')
 split['train'][:3]
 > ['1v6j_A_D', '2v6a_L_A', '2v6a_B_O']

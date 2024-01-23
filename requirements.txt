@@ -112,7 +112,6 @@ pytest==7.3.1
 python-dateutil==2.8.2
 python-json-logger==2.0.7
 pytz==2023.3
-PyYAML==5.4.1
 pyzmq==25.0.2
 qtconsole==5.4.3
 QtPy==2.3.1
