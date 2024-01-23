@@ -26,7 +26,7 @@ The PPIRef dataset can be downloaded from Zenodo (TBD soon). Alternatively, the 
 
 ## Installation
 
-To install the package, clone the repository (`git clone git@github.com:anton-bushuiev/PPIRef.git; cd PPIRef`) and run `pip install .` in the root directory. The package was tested with Python 3.9.
+To install the package, run `pip install git+https://github.com/anton-bushuiev/PPIRef.git`. The package was tested with Python 3.9.
 
 Please see the `external/README.md` directory for the details on how to install the external software for comparing PPIs and calculating buried surface area (BSA).
 
@@ -178,7 +178,7 @@ from ppiref.split import read_split, write_split
 
 # Read prepared splits from a .json file in ./splits
 # PPIRef50K used to train PPIformer
-split = read_split('ppiref_filtered_clustered_04', full_paths=False)
+split = read_split('ppiref_filtered_clustered_03', full_paths=False)
 split['whole'][:3]
 > ['4q2p_A_B', '2q2g_A_B', '6q2a_H_K']
 
