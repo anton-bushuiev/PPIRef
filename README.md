@@ -215,7 +215,7 @@ If you find this repository useful, please cite our paper or the corresponding e
 @article{
   bushuiev2024learning,
   title={Learning to design protein-protein interactions with enhanced generalization},
-  author={Bushuiev, Anton and Bushuiev, Roman and Kouba, Petr and Filkin, Anatolii and Gabrielova, Marketa and Gabriel, Michal and Sedlar, Jiri and Pluskal, Tomas and Damborsky, Jiri and Mazurenko, Stanislav and others},
+  author={Anton Bushuiev and Roman Bushuiev and Petr Kouba and Anatolii Filkin and Marketa Gabrielova and Michal Gabriel and Jiri Sedlar and Tomas Pluskal and Jiri Damborsky and Stanislav Mazurenko and Josef Sivic},
   booktitle={The Twelfth International Conference on Learning Representations},
   year={2024}
 }
