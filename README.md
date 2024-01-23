@@ -8,7 +8,7 @@
   <img src="assets/readme-dimer-close-up.png"/>
 </p>
 
-PPIRef is a Python package for processing and analysing 3D structures of protein-protein interactions (PPIs). It is based on the PPIRef dataset.
+PPIRef is a Python package for working with 3D structures of protein-protein interactions (PPIs). It is based on the PPIRef dataset.
 
 # PPIRef dataset
 
