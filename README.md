@@ -26,7 +26,16 @@ The PPIRef dataset can be downloaded from Zenodo (TBD soon). Alternatively, the 
 
 ## Installation
 
-To install the package, run `pip install git+https://github.com/anton-bushuiev/PPIRef.git`. The package was tested with Python 3.9.
+To install the package, run
+```
+pip install git+https://github.com/anton-bushuiev/PPIRef.git
+```
+This will however only install Python source code and download basic data files (data splits and example files from `ppiref/data`). If you want to use the complete repository, including external software (`./external`), scripts (`./scripts`) or tests (`./tests`), please clone the complete repository and install it in editable mode:
+```
+git clone https://github.com/anton-bushuiev/PPIRef.git
+cd PPIRef; pip install -e .
+```
+The package was tested with Python 3.9.
 
 Please see the `external/README.md` directory for the details on how to install the external software for comparing PPIs and calculating buried surface area (BSA).
 
