@@ -10,6 +10,8 @@
 
 PPIRef is a Python package for working with 3D structures of protein-protein interactions (PPIs). It is based on the PPIRef dataset.
 
+Please do not hesitate to contact us or create an issue/PR if you have any questions or suggestions.
+
 # PPIRef dataset
 
 PPIRef is a complete* and non-redundant dataset of protein-protein interactions (PPIs). It was constructed in three steps: (i) exhaustevily extract all putative protein dimers from PDB based on heavy atom contacts, (ii) filter out not proper PPIs based on buried surface and quality criteria, (iii) remove near-duplicate PPIs with iDist - a fast algorithm accurately approximating PPI alignment-based algorithms such as iAlign. See [our paper](https://arxiv.org/abs/2310.18515) for details.
