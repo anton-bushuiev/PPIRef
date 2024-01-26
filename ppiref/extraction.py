@@ -96,7 +96,9 @@ class PPIExtractor:
         header = parse_pdb_header(pdb_path)
         pdb_stats = {
             'RESOLUTION': str(header['resolution']) + ' A',
-            'STRUCTURE METHOD': header['structure_method']
+            'STRUCTURE METHOD': header['structure_method'],
+            'DEPOSITION DATE': header.get('deposition_date', None),
+            'RELEASE DATE': header.get('release_date', None)
         }
 
         # Get first model and preprocess atom data frame
