@@ -61,3 +61,9 @@ class PPI:
                 val = float(val)
 
         return name, val
+
+
+def sort_partners(ppi_id):
+    parts = ppi_id.split('_')
+    pdb_id, partners = parts[0], parts[1:]
+    return pdb_id + '_' + '_'.join(sorted(partners))

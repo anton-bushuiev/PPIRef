@@ -15,7 +15,7 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 
 
 @click.command()
-@click.option('--split', type=str, default='ppiref_filtered')
+@click.option('--split', type=str, default='ppiref_6A_filtered')
 @click.option('--fold', type=str, default='whole')
 @click.option('--pdb_dir', type=str, default=None)
 @click.option('--out_dir', type=str, default=None)
@@ -40,7 +40,7 @@ def main(split, fold, pdb_dir, out_dir, max_workers, seed, out_file_suff):
     out_dir.mkdir(exist_ok=True, parents=True)
 
     # Init comparator
-    idist = IDist(pdb_dir=pdb_dir, max_workers=max_workers)
+    idist = IDist(pdb_dir=pdb_dir, max_workers=max_workers, verbose=True)
 
     # Embed
     idist.embed_parallel(ppis)

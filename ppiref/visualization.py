@@ -145,8 +145,6 @@ class PyMOL:
         pymol.set('stick_transparency', transparency, 'all')
 
         # Set cartoon style
-        pymol.do('set cartoon_flat_sheets, 0')
-        pymol.do('set cartoon_smooth_loops, 0')
         pymol.do('set ray_trace_mode, 3')
 
         # Set colors
