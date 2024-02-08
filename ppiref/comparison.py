@@ -9,13 +9,15 @@ import multiprocessing
 import subprocess
 import concurrent.futures
 from abc import ABC
-from typing import Iterable, Callable, Literal, Optional
+from typing import Iterable, Callable, Literal, Optional, Union
 from functools import partial
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import sklearn
+from Bio import Align
+from Bio.Align import substitution_matrices
 from tqdm import tqdm
 from graphein.protein.config import ProteinGraphConfig
 from graphein.protein.graphs import construct_graph
@@ -26,8 +28,10 @@ from graphein.protein.features.sequence.embeddings import esm_residue_embedding
 from graphein.protein.features.sequence.utils import (
     aggregate_feature_over_chains, aggregate_feature_over_residues)
 
+from mutils.pdb import get_sequences
+
 from ppiref.utils.pdb import download_pdb
-from ppiref.utils.ppipath import path_to_pdb_id
+from ppiref.utils.ppipath import path_to_pdb_id, ppi_id_to_nested_suffix, path_to_partners
 from ppiref.definitions import IALIGN_PATH, USALIGN_PATH
 
 
@@ -43,6 +47,25 @@ class PPIComparator(ABC):
 
     def compare(self, ppi0: Path, ppi1: Path) -> dict:
         raise NotImplementedError()
+
+    def compare_all_against_all(
+        self,
+        ppis0: Iterable[Path] = None,
+        ppis1: Iterable[Path] = None,
+        ppi_pairs: Iterable[Iterable[Path]] = None
+    ) -> pd.DataFrame:
+        # Parse input
+        if ppis0 is not None and ppis1 is not None:
+            ppi_pairs = list(itertools.product(ppis0, ppis1))
+        elif ppi_pairs is None:
+            raise ValueError('Input pairs are not specified.')
+
+        # Compare and store to dataframe
+        df = self._execute_task_parallel(
+            self.compare, ppi_pairs, desc=f'Comparing PPIs with {self.__class__.__name__}'
+        )
+        df = pd.DataFrame(df)
+        return df
 
     def _execute_task_parallel(
         self,
@@ -66,9 +89,9 @@ class PPIComparator(ABC):
         if kind is None:
             kind = self.parallel_kind
         if kind == 'threads':
-            executor = concurrent.futures.ThreadPoolExecutor()
+            executor = concurrent.futures.ThreadPoolExecutor(max_workers=self.max_workers)
         elif kind == 'processes':
-            executor = concurrent.futures.ProcessPoolExecutor()
+            executor = concurrent.futures.ProcessPoolExecutor(max_workers=self.max_workers)
         else:
             raise ValueError("Invalid 'kind'. Use 'threads' or 'processes'.")
 
@@ -113,25 +136,6 @@ class USalign(PPIComparator):
         del metrics['PDBchain2']
 
         return {'PPI0': ppi_id0, 'PPI1': ppi_id1} | metrics
-
-    def compare_all_against_all(
-        self,
-        ppis0: Iterable[Path] = None,
-        ppis1: Iterable[Path] = None,
-        ppi_pairs: Iterable[Iterable[Path]] = None
-    ) -> pd.DataFrame:
-        # Parse input
-        if ppis0 is not None and ppis1 is not None:
-            ppi_pairs = list(itertools.product(ppis0, ppis1))
-        elif ppi_pairs is None:
-            raise ValueError('Input pairs are not specified.')
-
-        # Compare and store to dataframe
-        df = self._execute_task_parallel(
-            self.compare, ppi_pairs, desc='Comparing PPIs with iAlign'
-        )
-        df = pd.DataFrame(df)
-        return df
 
 
 class IAlign(PPIComparator):
@@ -236,30 +240,74 @@ class IAlign(PPIComparator):
         # Return result dict
         return {'PPI0': ppi_id0, 'PPI1': ppi_id1} | metrics
 
-    def compare_all_against_all(
-        self,
-        ppis0: Iterable[Path] = None,
-        ppis1: Iterable[Path] = None,
-        ppi_pairs: Iterable[Iterable[Path]] = None
-    ) -> pd.DataFrame:
-        # Parse input
-        if ppis0 is not None and ppis1 is not None:
-            ppi_pairs = list(itertools.product(ppis0, ppis1))
-        elif ppi_pairs is None:
-            raise ValueError('Input pairs are not specified.')
-
-        # Compare and store to dataframe
-        df = self._execute_task_parallel(
-            self.compare, ppi_pairs, desc='Comparing PPIs with iAlign'
-        )
-        df = pd.DataFrame(df)
-        return df
-
     @staticmethod
     def _parse_metric_line(line: str, dtypes=float) -> dict:
         metrics = map(lambda x: x.split('='), line.split(','))
         metrics = {metric.strip(): dtypes(val) for metric, val in metrics}
         return metrics
+
+
+class SequenceIdentityComparator(PPIComparator):
+    def __init__(
+        self,
+        pdb_dir: Union[Path, str],
+        nested_pdb_dir: bool = False,
+        aligner: Align.PairwiseAligner = None,
+        **kwargs
+    ):
+        """_summary_
+
+        Args:
+            pdb_dir (Union[Path, str]): _description_
+            nested_pdb_dir (bool, optional): True if files are in the format pdb_dir/bc/abcd.pdb.
+                False if files are in the format pdb_dir/abcd.pdb. Defaults to False.
+        """
+        super().__init__(**kwargs)
+        self.pdb_dir = Path(pdb_dir)
+        self.nested_pdb_dir = nested_pdb_dir
+
+        if aligner is None:
+            aligner = Align.PairwiseAligner()
+            aligner.open_gap_score = -11
+            aligner.extend_gap_score = -1
+            aligner.substitution_matrix = substitution_matrices.load('BLOSUM62')
+        self.aligner = aligner
+
+    def compare(self, ppi0: Path, ppi1: Path) -> dict:
+        ppi_id0, ppi_id1 = ppi0.stem, ppi1.stem
+        pdb_id0, pdb_id1 = path_to_pdb_id(ppi0), path_to_pdb_id(ppi1)
+
+        if self.nested_pdb_dir:
+            pdb0 = self.pdb_dir / ppi_id_to_nested_suffix(pdb_id0)
+            pdb1 = self.pdb_dir / ppi_id_to_nested_suffix(pdb_id1)
+        else:
+            pdb0 = self.pdb_dir / (path_to_pdb_id(ppi0) + '.pdb')
+            pdb1 = self.pdb_dir / (path_to_pdb_id(ppi1) + '.pdb')
+
+        partners0 = path_to_partners(ppi0)
+        partners1 = path_to_partners(ppi1)
+
+        seqs0 = get_sequences(pdb0)
+        seqs1 = get_sequences(pdb1)
+
+        pairwise = []
+        for p0 in partners0:
+            for p1 in partners1:
+                seq_id = self._sequence_identity(seqs0[p0], seqs1[p1])
+                pairwise.append(seq_id)
+
+        metrics = {'Maximum pairwise sequence identity': max(pairwise)}
+        return {'PPI0': ppi_id0, 'PPI1': ppi_id1} | metrics
+    
+    def _sequence_identity(self, seq0: str, seq1: str) -> float:
+        alignments = self.aligner.align(seq0, seq1)
+        alignment = next(alignments)
+        
+        parts = alignment.format("fasta").split('\n')
+        seq0, seq1 = parts[1], parts[3]
+        matches = sum(1 for a, b in zip(seq0, seq1) if a == b)
+        percent_match = matches / min(len(seq0), len(seq1))
+        return percent_match
 
 
 IDIST_EMBEDDING_KIND = Literal[
@@ -328,7 +376,7 @@ class IDist(PPIComparator):
         path1: Path
     ) -> dict:
         path0, path1 = Path(path0), Path(path1)
-        pdb0, pdb1 = path0.name, path1.name
+        pdb0, pdb1 = path0.stem, path1.stem
 
         # Encode and compare
         emb0 = self.embed(path0)
@@ -430,6 +478,8 @@ class IDist(PPIComparator):
             print(f'{ppi} led to an exception {exc}:')
             print(traceback.format_exc(), end='\n\n')
             embedding = np.full(1024, np.nan)
+        if self.verbose:
+            print(f'Embedded {ppi}')
         return embedding
 
     def embed_parallel(self, ppis: Iterable[Path]) -> None:
@@ -492,11 +542,18 @@ class IDist(PPIComparator):
     def query(self, q: np.array) -> list[str]:
         if self.neigh is None:
             self.build_index()
-        neigh_dist, neigh_ind = self.neigh.radius_neighbors(np.expand_dims(q, 0), sort_results=True)
-        neigh_dist, neigh_ind = neigh_dist[0], neigh_ind[0]  # single query vector
-        # TODO Optimize conversion to df
-        names = self.get_embeddings().index
-        neigh_ind = names[neigh_ind].to_numpy()
+
+        assert len(q.shape) in [1, 2]
+        if len(q.shape) == 1:  # single query vector
+            neigh_dist, neigh_ind = self.neigh.radius_neighbors(np.expand_dims(q, 0), sort_results=True)
+            neigh_dist, neigh_ind = neigh_dist[0], neigh_ind[0]
+            names = self.get_embeddings().index
+            neigh_ind = names[neigh_ind].to_numpy()
+        else:  # multiple stacked query vectors
+            neigh_dist, neigh_ind = self.neigh.radius_neighbors(q, sort_results=True)
+            names = self.get_embeddings().index
+            neigh_ind = [names[row].to_numpy() for row in neigh_ind]
+            
         return neigh_dist, neigh_ind
 
     def get_embeddings(self) -> pd.DataFrame:
@@ -505,11 +562,12 @@ class IDist(PPIComparator):
     def write_embeddings(self, path: Path) -> None:
         self.get_embeddings().to_csv(path)
 
-    def read_embeddings(self, path: Path, dropna: bool = False) -> None:
-        df_idist = pd.read_csv(path, index_col=0)
+    def read_embeddings(self, df: Union[Path, pd.DataFrame], dropna: bool = False) -> None:
+        if isinstance(df, Path):
+            df = pd.read_csv(df, index_col=0)
         if dropna:
-            df_idist = df_idist.dropna()
-        embeddings = df_idist.T.to_dict(orient='series')
+            df = df.dropna()
+        embeddings = df.T.to_dict(orient='series')
         embeddings = {k: np.array(v) for k, v in embeddings.items()}
         self.embeddings = embeddings
 

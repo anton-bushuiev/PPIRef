@@ -8,7 +8,7 @@
   <img src="assets/readme-dimer-close-up.png"/>
 </p>
 
-PPIRef is a Python package for working with 3D structures of protein-protein interactions (PPIs). It is based on the PPIRef dataset.`
+PPIRef is a Python package for working with 3D structures of protein-protein interactions (PPIs). It is based on the PPIRef dataset.
 
 Please do not hesitate to contact us or create an issue/PR if you have any questions or suggestions.
 
@@ -114,10 +114,10 @@ ppi.stats
 
 ## Comparing PPIs
 
-This package provides wrappers for iAlign and US-align (see `external/README.md`), as well as their scalable approximation iDist (see our [paper](https://arxiv.org/pdf/2310.18515.pdf)) for comparing PPI structures.
+This package provides wrappers for iAlign and US-align (see `external/README.md`), as well as their scalable approximation iDist (see our [paper](https://arxiv.org/pdf/2310.18515.pdf)) for comparing PPI structures. Additionally it provides a sequence identity comparator to compare PPIs by the corresponding sequences.
 
 ```python
-from ppiref.comparison import IAlign, USalign, IDist
+from ppiref.comparison import IAlign, USalign, IDist, SequenceIdentityComparator
 
 # Prepare near-duplicate PPIs from Figure 1 in the paper (https://arxiv.org/pdf/2310.18515.pdf)
 extractor = PPIExtractor(out_dir=ppi_dir, kind='heavy', radius=6., bsa=False)
@@ -126,19 +126,28 @@ extractor.extract(PPIREF_TEST_DATA_DIR / '3p9r.pdb', partners=['B', 'D'])
 ppis = [ppi_dir / 'p7/1p7z_A_C.pdb', ppi_dir / 'p9/3p9r_B_D.pdb']
 
 # Compare with iAlign (see external/README.md for installation)
+# High IS-score and low P-value indicate high similarity
 ialign = IAlign()
 ialign.compare(*ppis)
 > {'PPI0': '1p7z_A_C', 'PPI1': '3p9r_B_D', 'IS-score': 0.95822, 'P-value': 8.22e-67, 'Z-score': 152.167, 'Number of aligned residues': 249, 'Number of aligned contacts': 347, 'RMSD': 0.37, 'Seq identity': 0.992}
 
 # Compare with US-align (see external/README.md for installation)
+# High TM-scores in both directions indicate high similarity
 usalign = USalign()
 usalign.compare(*ppis)
 > {'PPI0': '1p7z_A_C', 'PPI1': '3p9r_B_D', 'TM1': 0.992, 'TM2': 0.9965, 'RMSD': 0.3, 'ID1': 0.991, 'ID2': 0.996, 'IDali': 0.998, 'L1': 448, 'L2': 446, 'Lali': 445}
 
 # Compare with iDist
+# Low distance indicates high similarity (below 0.04 is considered near-duplicate for 6A distance interfaces)
 idist = IDist()
 idist.compare(*ppis)
-> {'PPI0': '1p7z_A_C.pdb', 'PPI1': '3p9r_B_D.pdb', 'L2': 0.0026614179313795114, 'L1': 0.006036636849518753 'Cosine Similarity': 0.999777940667365}
+> {'PPI0': '1p7z_A_C', 'PPI1': '3p9r_B_D', 'L2': 0.0026614179313795114, 'L1': 0.006036636849518753 'Cosine Similarity': 0.999777940667365}
+
+# Compare by maximum pairwise sequence identity
+# High sequence identity indicates high similarity
+seqid = SequenceIdentityComparator(pdb_dir=PPIREF_TEST_DATA_DIR)  # also requires dir with complete PDB files to extract sequences
+seqid.compare(*ppis)
+> {'PPI0': '1p7z_A_C', 'PPI1': '3p9r_B_D', 'Maximum pairwise sequence identity': 0.9944979367262724}
 
 # Compare PPIs pairwise with iDist
 # (possible with other methods as well but has heavy quadratic complexity)
