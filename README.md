@@ -22,7 +22,7 @@ PPIRef is a complete* and non-redundant dataset of protein-protein interactions 
 
 The PPIRef dataset can be downloaded from [Zenodo](https://zenodo.org/records/10651459). Alternatively, the dataset may be reconstructed from scratch with the following steps: (i) downloading and unpacking PDB (`scripts/download_pdb.sh` and `scripts/unpack_pdb.sh`), (ii) extracting dimer PPIs from all PDB files (`scripts/ppi_extractor.py`) and (iii) filtering and clustering PPIs (see below).
 
-\* (with respect to PDB on June 20, 2023)
+\* (with respect to PDB in Jan, 2024)
 
 # PPIRef package
 
