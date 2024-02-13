@@ -86,3 +86,18 @@ If you find dr_sasa useful, please cite the original paper:
   publisher={Oxford University Press}
 }
 ```
+
+## MMseqs2
+The `ppiref.comparison.MMSeqs2PPIRetriever` requires MMseqs2 to retrive PPIs from PDB involving similar sequences. The MMseqs2 does not need to be clonned locally. Please follow the official [installation guide](https://github.com/soedinglab/mmseqs2?tab=readme-ov-file#installation) to install MMseqs2, and cite the original paper if you find the wrapper useful:
+```
+@article{steinegger2017mmseqs2,
+  title={MMseqs2 enables sensitive protein sequence searching for the analysis of massive data sets},
+  author={Steinegger, Martin and S{\"o}ding, Johannes},
+  journal={Nature biotechnology},
+  volume={35},
+  number={11},
+  pages={1026--1028},
+  year={2017},
+  publisher={Nature Publishing Group US New York}
+}
+```

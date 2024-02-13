@@ -8,6 +8,7 @@ import traceback
 import multiprocessing
 import subprocess
 import concurrent.futures
+import tempfile
 from abc import ABC
 from typing import Iterable, Callable, Literal, Optional, Union
 from functools import partial
@@ -30,9 +31,10 @@ from graphein.protein.features.sequence.utils import (
 
 from mutils.pdb import get_sequences
 
+from ppiref.split import read_fold
 from ppiref.utils.pdb import download_pdb
 from ppiref.utils.ppipath import path_to_pdb_id, ppi_id_to_nested_suffix, path_to_partners
-from ppiref.definitions import IALIGN_PATH, USALIGN_PATH
+from ppiref.definitions import IALIGN_PATH, USALIGN_PATH, PPIREF_DATA_DIR
 
 
 class PPIComparator(ABC):
@@ -409,7 +411,7 @@ class IDist(PPIComparator):
         df = pd.DataFrame(df)
         return df
 
-    def embed(self, ppi: Path) -> np.array:
+    def embed(self, ppi: Path, store: bool = True) -> np.array:
         ppi_id = ppi.stem
         ppi = str(ppi)
         if self.kind == 'esm_embedding':
@@ -468,7 +470,8 @@ class IDist(PPIComparator):
 
         # Save to cache and return
         embedding = g_ppi.graph['embedding_mean_mean']
-        self.embeddings[ppi_id] = embedding
+        if store:
+            self.embeddings[ppi_id] = embedding
         return embedding
 
     def embed_without_exception(self, ppi: Path) -> np.array:
@@ -588,3 +591,60 @@ class IDist(PPIComparator):
             download_pdb(pdb_id, path=pdb)
 
         return pdb
+
+
+class MMSeqs2PPIRetriever:
+
+    DEFAULT_DB = PPIREF_DATA_DIR / 'ppiref/ppi_6A_stats/mmseqs_db/db'
+
+    def __init__(
+        self,
+        db: Union[str, Path] = DEFAULT_DB,
+        ppi_split: str = 'ppiref_6A_filtered', # PPI ids to consider (all proper PPIs by default)
+        ppi_fold: str = 'whole',
+        verbose: bool = False,
+    ):
+        self.db = Path(db)
+        assert db.is_file(), f'MMSeqs2 databsase file {db} does not exist.'
+        self.verbose = verbose
+
+        # Store all PPI ids in tuples (ppi_id, pdb_id, partners)
+        ppis = read_fold(ppi_split, ppi_fold, full_paths=False)
+        self.ppis = [(ppi, ppi.split('_', 1)[0], ppi.split('_')[1:]) for ppi in ppis]
+
+    def query(self, seq: Union[str, Path]) -> tuple[list[float], list[str], list[str]]:
+        # Prepare input
+        if isinstance(seq, str):
+            if seq.endswith('.fasta'):
+                seq = Path(seq)
+            else:                
+                raise NotImplementedError('Only fasta files are currently supported.')
+        seq = Path(seq)
+        assert seq.is_file(), f'File {seq} does not exist.'
+
+        # Run MMSeqs2
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            # Prepare mmseqs2 arguments
+            tmp_dir = Path(tmp_dir)
+            result_file = tmp_dir / 'result.m8'
+
+            # Run
+            command = f'mmseqs easy-search {seq} {self.db} {result_file} {tmp_dir}'
+            subprocess.run(command, check=False, capture_output=not self.verbose, shell=True)
+            result = pd.read_csv(result_file, sep='\t', header=None)
+            result = result.sort_values(by=2, ascending=False)
+
+        # Map sequence similarity matches to all PPI similarity matches
+        ps = result.loc[:, 1].to_list()
+        seq_ids = result.loc[:, 2].to_list()
+        ppis, ppi_seq_ids, partners = [], [], []
+        for p, seq_id in zip(ps, seq_ids):
+            pdb, partner = p.split(':')
+            pdb = pdb.lower()
+            for ppi_src, pdb_src, partners_src in self.ppis:
+                if pdb == pdb_src and partner in partners_src:
+                    ppis.append(ppi_src)
+                    ppi_seq_ids.append(seq_id)
+                    partners.append(partner)
+
+        return ppi_seq_ids, ppis, partners
