@@ -24,7 +24,7 @@ PPIRef is a complete* and non-redundant dataset of protein-protein interactions 
 
 ## How to use
 
-The PPIRef dataset is available on [Zenodo](https://zenodo.org/records/10700674). We recommended downloading it and putting under `ppiref/data/ppiref`. This can be done automatically by running (see below on how to install the ppiref pacakge) to download the 6A interfaces:
+The PPIRef dataset is available on [Zenodo](https://zenodo.org/records/10700674). We recommended downloading it and putting under `ppiref/data/ppiref`. This can be done automatically by running the following command to download all 6A interfaces in .pdb files (see below on how to install the ppiref pacakge):
 ```python
 from ppiref.utils.misc import download_from_zenodo
 download_from_zenodo('ppi_6A.zip')
@@ -40,7 +40,13 @@ Additionally, this package provides methods to analyze, compare and deduplicate 
 
 ## Installation
 
-To install the package, run
+If you do not have Python installed, we recommend using the [Miniconda distribution](https://docs.anaconda.com/free/miniconda/). Please install miniconda and create a new environment:
+```
+conda create -n ppiref python=3.10
+conda activate ppiref
+```
+
+To install the PPIRef package, run
 ```
 pip install git+https://github.com/anton-bushuiev/PPIRef.git
 ```
@@ -291,26 +297,43 @@ they are proper PPIs, as they satisfy the PPIRef filtering criteria (see "PPIRef
 
 ## Splitting PPIs
 
-The package provides a unified approach to storing and processing data splits of PPIs.
+The package provides a unified approach to storing and processing data splits and other subsets of PPIs.
 
 ```python
-from ppiref.split import read_split, write_split
+from ppiref.split import read_split, read_fold, read_split_source, write_split
 
-# Read prepared splits from a .json file in ./ppiref/data/splits
-# PPIRef50K used to train PPIformer
-split = read_split('ppiref_10A_filtered_clustered_03', full_paths=False)
+# Read PPI codes for all 6A interfaces from PPIRef
+# (from a prepared .json file in ./ppiref/data/splits)
+split = read_split('ppiref_6A_raw', full_paths=False)
 split['whole'][:3]
-> ['4q2p_A_B', '2q2g_A_B', '6q2a_H_K']
+> ['6q2a_F_O', '3q2k_I_P', '8q2k_A_C']
+
+# Read location of .pdb files of the split
+read_split_source('ppiref_6A_raw')
+> PosixPath('/scratch/project/open-26-23/antonb/PPIRef/ppiref/data/ppiref/ppi_6A')
+
+# Or direcrly read the fold with full paths (whole dataset in this case)
+fold = read_fold('ppiref_6A_raw', 'whole', full_paths=True)
+fold[0]
+> PPIPath('/scratch/project/open-26-23/antonb/tmp/PPIRef/ppiref/data/ppiref/ppi_6A/q2/6q2a_F_O.pdb')
+```
+
+Examples of predefined splits:
+
+```python
+# PPIRef50K used to train PPIformer
+fold = read_fold('ppiref_10A_filtered_clustered_03', 'whole', full_paths=False)
+fold[:3]
+> ['4q2p_A_B', '3q2s_A_D', '6q2v_B_E']
 
 # Test set from non-leaking SKEMPI v2.0
-split = read_split('skempi2_iclr24_split', full_paths=False)
-split['test'][:3]
+fold = read_fold('skempi2_iclr24_split', 'test', full_paths=False)
+fold[:3]
 > ['1B3S_A_D', '1B2U_A_D', '1BRS_A_D']
 
-# DIPS set used to train EquiDock and DiffDock-PP
-split = read_split('dips_equidock', full_paths=False)
-split['train'][:3]
-> ['1v6j_A_D', '2v6a_L_A', '2v6a_B_O']
+# DIPS set used to train and validate EquiDock and DiffDock-PP
+fold = read_fold('dips_equidock', 'train+val', full_paths=False)
+> ['1v6j_A_D', '2v6a_A_L', '2v6a_B_O']
 
 # Write your own split (this will also run simple sanity checks)
 split = {'train': ['1p7z_A_C'], 'test': ['3p9r_B_D', '1p7z_A_C']}
