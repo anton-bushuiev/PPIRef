@@ -8,21 +8,33 @@
   <img src="assets/readme-dimer-close-up.png"/>
 </p>
 
-PPIRef is a Python package for working with 3D structures of protein-protein interactions (PPIs). It is based on the PPIRef dataset.
+PPIRef is a Python package for working with 3D structures of protein-protein interactions (PPIs). It is based on the PPIRef dataset, comprising all PPIs from Protein Data Bank.
 
-Please do not hesitate to contact us or create an issue/PR if you have any questions or suggestions.
+Please do not hesitate to contact us or create an issue/PR if you have any questions or suggestions ✌️.
 
 # PPIRef dataset
-
-PPIRef is a complete* and non-redundant dataset of protein-protein interactions (PPIs). It was constructed in three steps: (i) exhaustevily extract all putative protein dimers from PDB based on heavy atom contacts (we use two variants with 6A and 10A cutoffs), (ii) filter out not proper PPIs based on buried surface and quality criteria, (iii) remove near-duplicate PPIs with iDist - a fast algorithm accurately approximating PPI alignment-based algorithms such as iAlign. See [our paper](https://arxiv.org/abs/2310.18515) for details.
 
 <p align="center">
   <img align="right" width="350" src="https://github.com/anton-bushuiev/PPIRef/assets/67932762/f5d12ffb-8d1b-40b8-bab1-23d33a091f05"/>
 </p>
 
-The PPIRef dataset can be downloaded from [Zenodo](https://zenodo.org/records/10651459). Alternatively, the dataset may be reconstructed from scratch with the following steps: (i) downloading and unpacking PDB (`scripts/download_pdb.sh` and `scripts/unpack_pdb.sh`), (ii) extracting dimer PPIs from all PDB files (`scripts/ppi_extractor.py`) and (iii) filtering and clustering PPIs (see below).
+PPIRef is a complete* and non-redundant dataset of protein-protein interactions (PPIs). It was constructed in three steps: (i) exhaustevily extract all putative protein dimers from PDB based on heavy atom contacts (we use two variants with 6A and 10A distance cutoffs), (ii) filter out not proper PPIs based on buried surface area and quality criteria, (iii) remove near-duplicate PPIs with iDist - a fast algorithm accurately approximating PPI alignment-based algorithms such as iAlign. See [our paper](https://arxiv.org/abs/2310.18515) for details.
 
 \* (with respect to PDB in Jan, 2024)
+
+## How to use
+
+The PPIRef dataset is available on [Zenodo](https://zenodo.org/records/10700674). We recommended downloading it and putting under `ppiref/data/ppiref`. This can be done automatically by running (see below on how to install the ppiref pacakge) to download the 6A interfaces:
+```python
+from ppiref.utils.misc import download_from_zenodo
+download_from_zenodo('ppi_6A.zip')
+```
+
+Alternatively, the dataset may be reconstructed from scratch with the following steps: (i) downloading and unpacking PDB (`scripts/download_pdb.sh` and `scripts/unpack_pdb.sh`), (ii) extracting dimer PPIs from all PDB files (`scripts/ppi_extractor.py`) and (iii) filtering and clustering PPIs (see the corresponding section below).
+
+After downloading or reconstructing the dataset, one can use the predefined subsets and splits. The subsets are located in `ppiref/data/splits`, and can be read with the `ppiref.split.read_split` function (see the corresponding section below). The splits are stored in JSON files and contain the PPI IDs (e.g., `1bui_A_C` for the interaction between chains `A` and `C` in the `1bui` PDB entry) for each subset (e.g., `train`, `test`, `val`).
+
+Additionally, this package provides methods to analyze, compare and deduplicate PPIs, as well as to search for similar PPIs in PDB. Please see the examples below.
 
 # PPIRef package
 
@@ -37,7 +49,7 @@ This will however only install Python source code and download basic data files 
 git clone https://github.com/anton-bushuiev/PPIRef.git
 cd PPIRef; pip install -e .
 ```
-The package was tested with Python 3.9.
+The package was tested with Python 3.9 and Python 3.10.
 
 Please see the `external/README.md` directory for the details on how to install the external software for comparing PPIs and calculating buried surface area (BSA).
 
@@ -196,7 +208,7 @@ idist.embeddings
 
 ## Finding similar PPIs in Protein Data Bank
 
-The package enables fast search for similar PPIs in PDB based on the interface structure or protein sequence of interest. In the following examples, we will use the same example PPI as in the "Comparing PPIs" section, the KatE homooligomer (1p7z_A_C). Fast search requires precomputed data: iDist embeddings for interface search and MMseqs2 database for sequence search. Thereofore, please download the `ppiref_6A_stats.zip` from [Zenodo](https://zenodo.org/records/10651459), unzip and put it under `PPIRef/ppiref/data/ppiref/ppi_6A_stats` to follow the examples. This can be done automatically by running:
+The package enables fast search for similar PPIs in PDB based on the interface structure or protein sequence of interest. In the following examples, we will use the same example PPI as in the "Comparing PPIs" section, the KatE homooligomer (1p7z_A_C). Fast search requires precomputed data: iDist embeddings for interface search and MMseqs2 database for sequence search. Thereofore, please download the `ppiref_6A_stats.zip` from [Zenodo](https://zenodo.org/records/10700674), unzip and put it under `PPIRef/ppiref/data/ppiref/ppi_6A_stats` to follow the examples. This can be done automatically by running:
 ```python
 from ppiref.utils.misc import download_from_zenodo
 download_from_zenodo('ppi_6A_stats.zip')
@@ -284,7 +296,7 @@ The package provides a unified approach to storing and processing data splits of
 ```python
 from ppiref.split import read_split, write_split
 
-# Read prepared splits from a .json file in ./splits
+# Read prepared splits from a .json file in ./ppiref/data/splits
 # PPIRef50K used to train PPIformer
 split = read_split('ppiref_10A_filtered_clustered_03', full_paths=False)
 split['whole'][:3]
@@ -309,9 +321,9 @@ write_split('demo_split', source=PPIREF_TEST_DATA_DIR / 'ppi_dir', folds=split)
 
 # TODO
 
-Technical 
+Technical
 - [x] PPIRef (6A interfaces) on Zenodo
-- [ ] 10A interfaces on Zenodo
+- [ ] PPIRef (10A interfaces) on Zenodo
 - [ ] Docstrings
 
 Enhancements
