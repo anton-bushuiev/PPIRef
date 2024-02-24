@@ -156,3 +156,5 @@ xmltodict==0.13.0
 zipp==3.15.0
 zope.event==4.6
 zope.interface==6.0
+mutils @ git+https://github.com/anton-bushuiev/mutils.git@main
+
