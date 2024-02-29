@@ -24,15 +24,21 @@ PPIRef is a complete* and non-redundant dataset of protein-protein interactions 
 
 ## How to use
 
+**Downloading**
+
 The PPIRef dataset is available on [Zenodo](https://zenodo.org/records/10700674). We recommended downloading it and putting under `ppiref/data/ppiref`. This can be done automatically by running the following command to download all 6A interfaces in .pdb files (see below on how to install the ppiref pacakge):
 ```python
 from ppiref.utils.misc import download_from_zenodo
 download_from_zenodo('ppi_6A.zip')
 ```
 
-Alternatively, the dataset may be reconstructed from scratch with the following steps: (i) downloading and unpacking PDB (`scripts/download_pdb.sh` and `scripts/unpack_pdb.sh`), (ii) extracting dimer PPIs from all PDB files (`scripts/ppi_extractor.py`) and (iii) filtering and clustering PPIs (see the corresponding section below).
+**Reconstructing from scratch**
 
-After downloading or reconstructing the dataset, you will obtain all the dimeric interactions in PDB that have at least one contact between heavy atoms within the threshold distance (6 Angstrom for ppi_6A). Then, one can use the predefined splits and other subsets, located in `ppiref/data/splits`. They can be read with the `ppiref.split.read_split` function (see the corresponding section below). The splits are stored in JSON files and contain the PPI IDs (e.g., `1bui_A_C` for the interaction between chains `A` and `C` in the `1bui` PDB entry) for each subset (e.g., `train`, `test`, `val`). Some examples are:
+Alternatively, the dataset may be reconstructed from scratch with the following steps: (i) downloading and unpacking PDB (`scripts/download_pdb.sh` and `scripts/unpack_pdb.sh`), (ii) extracting all distance-based dimeric PPIs from all PDB files (`scripts/ppi_extractor.py`) and (iii) filtering and clustering PPIs using iDist (see the corresponding section below). The `ppi_6A.zip` archive contains the result of steps (i) and (ii), and the filtered subsets resulting from step (iii) are stored in `ppiref/data/splits`, as discussed below.
+
+**Using subsets and splits**
+
+After downloading or reconstructing the dataset, you will obtain all the dimeric interactions in PDB that have at least one contact between heavy atoms within the threshold distance (6 Angstrom for ppi_6A). Then, you can use the predefined splits and other subsets, located in `ppiref/data/splits`. They can be read with the `ppiref.split.read_split` function (see the corresponding section below). The splits are stored in JSON files and contain the PPI IDs (e.g., `1bui_A_C` for the interaction between chains `A` and `C` in the `1bui` PDB entry) for each subset (e.g., `train`, `test`, `val`). Some examples are:
 - `ppiref_6A_filtered.json` - all 6A interfaces that satisfy the filtering criteria for proper PPIs (a.k.a PPIRef300K, see Appendix A in the [paper](https://arxiv.org/abs/2310.18515) for details).
 - `ppiref_6A_filtered_clustered_04.json` - a non-redundant subset of PPIs that are deduplicated at 0.04 threshold of iDist (a.k.a PPIRef50K).
 
