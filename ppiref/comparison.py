@@ -99,16 +99,19 @@ class PPIComparator(ABC):
 
         total_tasks = len(inputs)
 
-        if not self.verbose:
-            warnings.warn(
-                'Current implementation of parallelization uses `executor.map`. Therefore tqdm '
-                'progress bar only shows 0\% and 100\%.'
-            )
-
+        futures = []
         with tqdm(desc=f'{desc} ({executor._max_workers} {kind})', total=total_tasks) as pbar:
-            results = list(executor.map(partial(self._unpacked_call, func), inputs, chunksize=chunksize))
-            pbar.update(total_tasks)
-
+            # Submitting tasks
+            for inp in inputs:
+                future = executor.submit(self._unpacked_call, func, inp)
+                futures.append(future)
+            
+            results = []
+            # Updating progress bar as tasks complete
+            for future in concurrent.futures.as_completed(futures):
+                results.append(future.result())
+                pbar.update(1)
+        
         return results
     
     def _unpacked_call(self, func, args):
@@ -185,7 +188,8 @@ class IAlign(PPIComparator):
             f' {chains}'
             f' {ppi0} {ppi1} > {tmp_out_file}'
         )
-        print(command)
+        if self.verbose:
+            print(command)
         subprocess.run(command, check=False, capture_output=not self.verbose, shell=True)
 
         # Parse output
