@@ -38,9 +38,15 @@ Alternatively, the dataset may be reconstructed from scratch with the following 
 
 **Using subsets and splits**
 
-After downloading or reconstructing the dataset, you will obtain all the dimeric interactions in PDB that have at least one contact between heavy atoms within the threshold distance (6 Angstrom for ppi_6A). Then, you can use the predefined splits and other subsets, located in `ppiref/data/splits`. They can be read with the `ppiref.split.read_split` function (see the corresponding section below). The splits are stored in JSON files and contain the PPI IDs (e.g., `1bui_A_C` for the interaction between chains `A` and `C` in the `1bui` PDB entry) for each subset (e.g., `train`, `test`, `val`). Some examples are:
+After downloading or reconstructing the dataset, you will obtain all the dimeric interactions in PDB that have at least one contact between heavy atoms within the threshold distance (6 Angstrom for `ppi_6A.zip`). Then, you can use the predefined splits and other subsets, located in `ppiref/data/splits`. They can be read with the `ppiref.split.read_split` function (see the corresponding section below). The splits are stored in JSON files and contain the PPI IDs (e.g., `1bui_A_C` for the interaction between chains `A` and `C` in the `1bui` PDB entry) for each subset (e.g., `train`, `test`, `val`). Some examples are:
 - `ppiref_6A_filtered.json` - all 6A interfaces that satisfy the filtering criteria for proper PPIs (a.k.a PPIRef300K, see Appendix A in the [paper](https://arxiv.org/abs/2310.18515) for details).
 - `ppiref_6A_filtered_clustered_04.json` - a non-redundant subset of PPIs that are deduplicated at 0.04 threshold of iDist (a.k.a PPIRef50K).
+
+The latter subset may be the best choice for training machine learning models since it removes biases towards interactions that are overrepresneted in PDB. You can read the subset via the following code (see the corresponding section below for more examples):
+```python
+from ppiref.split import read_fold
+ppi_paths = read_fold('ppiref_6A_filtered_clustered_04', 'whole')
+```
 
 Further, this package provides methods to analyze, compare and deduplicate PPIs, as well as to search for similar PPIs in PDB. Please see the examples below.
 
@@ -303,7 +309,7 @@ they are proper PPIs, as they satisfy the PPIRef filtering criteria (see "PPIRef
 > True
 ```
 
-## Splitting PPIs
+## Splitting and subsetting PPIs
 
 The package provides a unified approach to storing and processing data splits and other subsets of PPIs.
 
@@ -353,15 +359,19 @@ write_split('demo_split', source=PPIREF_TEST_DATA_DIR / 'ppi_dir', folds=split)
 # TODO
 
 Technical
+
 - [x] PPIRef (6A interfaces) on Zenodo
 - [ ] PPIRef (10A interfaces) on Zenodo
 - [ ] Docstrings
 
 Enhancements
+
+- [ ] Cluster all PPIs to sample from clusters rather than removing near duplicates completely (similar to UniRef seeds)
 - [ ] Add RASA values to classify residues according to [Levy 2010](https://pubmed.ncbi.nlm.nih.gov/20868694/)
 - [ ] Classify PPIs according to [Ofran2003](https://pubmed.ncbi.nlm.nih.gov/12488102/)
 
 # References
+
 If you find this repository useful, please cite our paper or the corresponding external software (see `external/README.md`).
 ```
 @article{
