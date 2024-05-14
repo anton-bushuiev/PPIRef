@@ -361,7 +361,8 @@ write_split('demo_split', source=PPIREF_TEST_DATA_DIR / 'ppi_dir', folds=split)
 Technical
 
 - [x] PPIRef (6A interfaces) on Zenodo
-- [ ] PPIRef (10A interfaces) on Zenodo
+- [ ] PPIRef (10A interfaces) on Zenodo (expected in June 2024)
+- [ ] PPIRef version based on the [PDB-REDO database](https://pdb-redo.eu/) for higher-quality side chains in the structures (expected in June 2024)
 - [ ] Docstrings
 
 Enhancements
