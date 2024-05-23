@@ -170,7 +170,7 @@ usalign.compare(*ppis)
 > {'PPI0': '1p7z_A_C', 'PPI1': '3p9r_B_D', 'TM1': 0.992, 'TM2': 0.9965, 'RMSD': 0.3, 'ID1': 0.991, 'ID2': 0.996, 'IDali': 0.998, 'L1': 448, 'L2': 446, 'Lali': 445}
 
 # Compare with iDist
-# Low distance indicates high similarity (below 0.04 is considered near-duplicate for 6A distance interfaces)
+# Low L2 (Euclidean) distance indicates high similarity (below 0.04 is considered near-duplicate for 6A distance interfaces)
 idist = IDist()
 idist.compare(*ppis)
 > {'PPI0': '1p7z_A_C', 'PPI1': '3p9r_B_D', 'L2': 0.0026614179313795114, 'L1': 0.006036636849518753 'Cosine Similarity': 0.999777940667365}
