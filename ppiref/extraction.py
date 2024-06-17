@@ -191,21 +191,30 @@ class PPIExtractor:
     def extract_parallel(
         self,
         in_dir: Union[Path, str],
+        in_file_pattern: Optional[str] = '.*\.pdb$',
         partition: tuple[float] = (0., 1.),
         resume: bool = True
     ) -> None:
-        """_summary_
+        """Extract interafces from all .pdb files in `in_dir` in parallel.
 
         Args:
-            in_dir: _description_
-            resume: Note: Still repeats processing of files that do not contain any PPIs (which are
-                very fast to process anyway). Defaults to True.
+            in_dir: Input directory with .pdb files to extract PPIs from.
+            in_file_pattern: Pattern to match all input files in `in_dir`. Defaults to '*.pdb'.
+            partition: Fractional partition of input files to process. For example, (0., 0.5) will
+                process the first half of the files. This isuseful, when extracting in the data 
+                parallel way across multiple nodes. Defaults to (0., 1.).
+            resume: If set to True, will check what .pdb files were already processed based on the
+                resulting files in the output directory, and skip them for processing. Defaults to
+                True.
         """
         in_dir = Path(in_dir)
 
         # Construct input chunks
-        in_files = tqdm(list(in_dir.rglob(f'*.pdb')), desc='Collecting input files')
-        inputs = sorted([path for path in in_files])
+        in_files = tqdm(list(in_dir.rglob('*')), desc='Collecting input files')
+        inputs = sorted([
+            path for path in tqdm(in_files, desc=f"Filtering input files with pattern \'{in_file_pattern}\'")
+            if not in_file_pattern or re.match(in_file_pattern, path.name)
+        ])
         if resume:
             out_files = list(self.out_dir.rglob('*.pdb')) \
                       + list(self.out_dir.rglob(f'*{NOPPI_EXTENSION}'))
