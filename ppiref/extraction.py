@@ -76,19 +76,20 @@ class PPIExtractor:
         pdb_path: Union[Path, str],
         partners: Optional[Iterable[str]] = None
     ) -> None:
-        """Extract interfaces from `pdb_path` and write as .pdb files.
+        """Extract interfaces from `pdb_path` and write as .pdb files. The files will be named
+        based on the input file names and the interacting chains. For example the A-B interaction
+        from abcd.pdb will be stored as `abcd_A_B.pdb`. Please note that if the input file name contains
+        underscores (`_`), they are replaced with dashes (`-`) in the output file name.
 
         Args:
             pdb_path: Path to .pdb file to extract PPIs from.
-            partners: If not None the interfaces are extracted only between specified chains.
-                In combination with self.join all interfaces between chains in `partners` are
-                extracted and written into a single file. If partners is None all dimeric interfaces
-                are extracted. Defaults to None.
+            partners: If not None the interface is extracted between specified chains. If partners
+                is None all dimeric interfaces from the file are extracted. Defaults to None.
         """
         # Preprocess args
         pdb_path = Path(pdb_path)
         pdb_id = path_to_pdb_id(pdb_path)
-        pdb_stem = pdb_path.stem
+        pdb_stem = pdb_path.stem.replace('_', '-')
         out_dir = self.out_dir / pdb_id[1:3] if self.nest_out_dir else self.out_dir
         out_dir.mkdir(exist_ok=True, parents=True)
 
