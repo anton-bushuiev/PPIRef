@@ -388,10 +388,10 @@ class IDist(PPIComparator):
         emb0 = self.embed(path0)
         emb1 = self.embed(path1)
         metrics = {
-            'L2': np.linalg.norm(emb0 - emb1),
-            'L1': np.linalg.norm(emb0 - emb1, ord=1),
-            'Cosine Similarity':
-                np.dot(emb0, emb1) / (np.linalg.norm(emb0)*np.linalg.norm(emb1))
+            'Euclidean distance': np.linalg.norm(emb0 - emb1),
+            # 'L1': np.linalg.norm(emb0 - emb1, ord = 1),
+            # 'Cosine Similarity':
+            #     np.dot(emb0, emb1) / (np.linalg.norm(emb0) * np.linalg.norm(emb1))
         }
 
         # Return result dict
