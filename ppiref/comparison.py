@@ -43,11 +43,32 @@ class PPIComparator(ABC):
         parallel_kind: Literal['threads', 'processes'] = 'processes',
         verbose=False
     ):
+        """Abstract class for comparing protein-protein interactions (PPIs).
+
+        Args:
+            max_workers (int, optional): Number of workers to use for parallel operations (such as
+                 comparing large sets of PPIs pairwise). Defaults to os.cpu_count() - 2.
+            parallel_kind (Literal[&#39;threads&#39;, &#39;processes&#39;], optional): Use
+                 multi-treading or multi-processing for parallel operations. Defaults to 'processes'.
+            verbose (bool, optional): If set to True, prints detailed log to the standard output.
+                 May be useful for debugging. Defaults to False.
+        """
         self.max_workers = max_workers
         self.parallel_kind = parallel_kind
         self.verbose = verbose
 
     def compare(self, ppi0: Path, ppi1: Path) -> dict:
+        """Abstract method for comparing two PPIs. Should be implemented in a subclass.
+
+        Args:
+            ppi0 (Path): Path to the first .pdb file containing a PPI. It is recommended to use
+                 the files produced by the `ppiref.extraction.PPIExtractor` class.
+            ppi1 (Path): Path to the second .pdb file containing a PPI. It is recommended to use
+                 the files produced by the `ppiref.extraction.PPIExtractor` class.
+
+        Returns:
+            dict: Dictionary with comparison results.
+        """
         raise NotImplementedError()
 
     def compare_all_against_all(
@@ -56,6 +77,21 @@ class PPIComparator(ABC):
         ppis1: Iterable[Path] = None,
         ppi_pairs: Iterable[Iterable[Path]] = None
     ) -> pd.DataFrame:
+        """Comparing all PPIs from one set against all PPIs from another set. This method from the
+         abstract class is used as a default implementation where all PPI pairs are compared 
+         in a data parallel way. A subclass may override this method to provide a more efficient
+         implementation.
+
+        Args:
+            ppis0 (Iterable[Path], optional): First set of PPI paths. Defaults to None.
+            ppis1 (Iterable[Path], optional): Second set of PPI paths. Defaults to None.
+            ppi_pairs (Iterable[Iterable[Path]], optional): Pre-defined pairs to compare instead of
+                 complete pair-wise comparison of two sets. Defaults to None.
+
+        Returns:
+            pd.DataFrame: Data frame with comparison results. The data frame has two columns
+                 corresponding to pairs of PPI ids, and additional columns with comparison metrics.
+        """
         # Parse input
         if ppis0 is not None and ppis1 is not None:
             ppi_pairs = list(itertools.product(ppis0, ppis1))
@@ -75,19 +111,26 @@ class PPIComparator(ABC):
         inputs: Iterable,
         kind: str = None,
         desc: str = '',
-        chunksize: int = 1000  # NOTE: Seems to be crucial for a parallel executor not to freeze on > ~100K jobs
+        chunksize: int = 1000
     ) -> Iterable:
-        """Parallelize computation
+        """Universal method for executing a function in parallel on a set of inputs. The method
+         uses either multi-threading or multi-processing depending on the `parallel_kind` attribute
+         of the class.
 
         Args:
-            func (Callable): Function to apply to each input from `inputs`
-            inputs (Iterable): All inputs
-            kind (str): Either 'theads' or 'process'
-            desc (str): Description for the tqdm progress bar
+            func (Callable): Function to apply to inputs
+            inputs (Iterable): All inputs to apply the function to
+            kind (str, optional): Use multi-threading or multi-processing. Defaults to None to use
+                 the kind specified in the comparator constructor.
+            desc (str, optional): Progress bar description. Defaults to ''.
+            chunksize (int, optional): Number of inputs to be processed at a time by a single
+                 worker. Low chunksize may result into a too large number (e.g. >100K) of jobs for
+                 workers, which may lead to a significant management overhead. Defaults to 1000.
 
         Returns:
-            Iterable: All outputs
+            Iterable: List of results of applying the function to inputs.
         """
+        # Init executor
         if kind is None:
             kind = self.parallel_kind
         if kind == 'threads':
@@ -97,17 +140,17 @@ class PPIComparator(ABC):
         else:
             raise ValueError("Invalid 'kind'. Use 'threads' or 'processes'.")
 
+        # Run tasks
         total_tasks = len(inputs)
-
         futures = []
         with tqdm(desc=f'{desc} ({executor._max_workers} {kind})', total=total_tasks) as pbar:
-            # Submitting tasks
+            # Submit tasks
             for inp in inputs:
                 future = executor.submit(self._unpacked_call, func, inp)
                 futures.append(future)
             
             results = []
-            # Updating progress bar as tasks complete
+            # Update progress bar as tasks complete
             for future in concurrent.futures.as_completed(futures):
                 results.append(future.result())
                 pbar.update(1)
@@ -115,6 +158,7 @@ class PPIComparator(ABC):
         return results
     
     def _unpacked_call(self, func, args):
+        """Helper function to unpack arguments for a function call. Used for parallel execution."""
         return func(*args)
     
 
@@ -125,11 +169,34 @@ class USalign(PPIComparator):
         args: str = '',
         **kwargs
     ):
+        """Wrapper for the US-align protein-protein interaction comparator
+         (https://zhanggroup.org/US-align/). Please install the US-align software and provide the
+         path to the executable.
+
+        Args:
+            path (Path, optional): Path to the `USalign` executable. Defaults to USALIGN_PATH, which
+                 should be used if you follow the instructions from the PPIRef/external/README.md to
+                 install US-align.
+            args (str, optional): Optional command line arguments to be passed to US-align.
+                 Defaults to ''.
+        """
         super().__init__(**kwargs)
         self.path = path
         self.args = args
 
     def compare(self, ppi0: Path, ppi1: Path) -> dict:
+        """Compare two protein-protein interactions.
+
+        Args:
+            ppi0 (Path): Path to the first .pdb file containing a PPI. It is recommended to use
+                 the files produced by the `ppiref.extraction.PPIExtractor` class.
+            ppi1 (Path): Path to the second .pdb file containing a PPI. It is recommended to use
+                 the files produced by the `ppiref.extraction.PPIExtractor` class.
+
+        Returns:
+            dict: Dictionary with two PPI ids being compared and all comparison metrics produced
+                 by US-align.
+        """
         ppi_id0, ppi_id1 = ppi0.stem, ppi1.stem
 
         command = f'{self.path} {ppi0} {ppi1} -outfmt 2 -mm 1 -ter 1 {self.args}'
@@ -147,11 +214,32 @@ class IAlign(PPIComparator):
     def __init__(
         self,
         path: Path = IALIGN_PATH,
-        args: str = '-a 2',  # '-a 2 -e is -dc 6.0 -minp 1 -mini 1',
-        tmp_out_pref: str = 'iAlign_tmp_out',  # TODO Use tempdir package instead
+        args: str = '-a 2 -minp 1 -mini 1',
+        tmp_out_pref: str = 'iAlign_tmp_out',
         multiple_resolution: tuple[str, Literal['max', 'min']] = ('P-value', 'min'),
         **kwargs
     ):
+        """Wrapper for the iAlign protein-protein interaction comparator
+         (https://doi.org/10.1093/bioinformatics/btq404). iAlign is the adaptation of TM-align to
+         protein-protein interfaces. Please install the iAlign source code in Perl and provide the
+         path to the executable.
+
+        Args:
+            path (Path, optional): Path to the `ialign.pl` executable. Defaults to USALIGN_PATH, which
+                 should be used if you follow the instructions from the PPIRef README to install
+                 iAlign.
+            args (str, optional): Command line arguments to use for iAlign. Defaults to
+                 '-a 2 -minp 1 -mini 1' to operate in verbose mode and not to skip small interfaces.
+            tmp_out_pref (str, optional): Prefix to use for temporariry directories storing iAlign
+                 outputs. Defaults to 'iAlign_tmp_out'.
+            multiple_resolution (tuple[str, Literal['max', 'min']], optional): If one or both input
+                 files contain multiple interfaces, this parameter specifies how to resolve multiple
+                 comparison results. The first element of the tuple specifies the metric to use for
+                 resolution, and the second element specifies whether to use the maximum or minimum.
+
+        Notes:
+            TODO: Remove `tmp_out_pref` and use the `tempdir` package instead.
+        """
         super().__init__(**kwargs)
         self.path = path
         self.args = args
@@ -159,6 +247,18 @@ class IAlign(PPIComparator):
         self.multiple_resolution = multiple_resolution
 
     def compare(self, ppi0: Path, ppi1: Path) -> dict:
+        """Compare two protein-protein interactions.
+
+        Args:
+            ppi0 (Path): Path to the first .pdb file containing a PPI. It is recommended to use
+                 the files produced by the `ppiref.extraction.PPIExtractor` class.
+            ppi1 (Path): Path to the second .pdb file containing a PPI. It is recommended to use
+                 the files produced by the `ppiref.extraction.PPIExtractor` class.
+
+        Returns:
+            dict: Dictionary with two PPI ids being compared and all comparison metrics produced
+                 by iAlign.
+        """
         # Create temporary directory with unique name to store outputs
         ppi_id0, ppi_id1 = ppi0.stem, ppi1.stem
         tmp_out_dir = Path(f'{self.tmp_out_pref}_{ppi_id0}_{ppi_id1}')
@@ -248,6 +348,7 @@ class IAlign(PPIComparator):
 
     @staticmethod
     def _parse_metric_line(line: str, dtypes=float) -> dict:
+        """Parse a line with a metric from iAlign output."""
         metrics = map(lambda x: x.split('='), line.split(','))
         metrics = {metric.strip(): dtypes(val) for metric, val in metrics}
         return metrics
@@ -261,12 +362,19 @@ class SequenceIdentityComparator(PPIComparator):
         aligner: Align.PairwiseAligner = None,
         **kwargs
     ):
-        """_summary_
+        """Protein-protein interaction comparator based on sequence identity. The comparator uses 
+         the BioPython library to align protein sequences and calculate the pairwise sequence
+         identity. The similarity is calculated as the maximum pairwise sequence identity between
+         chains from different PPIs.
 
         Args:
-            pdb_dir (Union[Path, str]): _description_
-            nested_pdb_dir (bool, optional): True if files are in the format pdb_dir/bc/abcd.pdb.
-                False if files are in the format pdb_dir/abcd.pdb. Defaults to False.
+            pdb_dir (Union[Path, str]): Directory with complete .pdb files that were used to extract
+                 PPI interactions from. The directory is used to get complete protein sequences for
+                 comparison.
+            nested_pdb_dir (bool): True if files are in the format `pdb_dir/bc/abcd.pdb`.
+                 False if files are in the format `pdb_dir/abcd.pdb`. Defaults to False.
+            aligner (Align.PairwiseAligner, optional): BioPython Aligner to use. Defaults to None
+                 to use the one employed in the PoseBusters package (https://arxiv.org/abs/2308.05777).
         """
         super().__init__(**kwargs)
         self.pdb_dir = Path(pdb_dir)
@@ -280,9 +388,25 @@ class SequenceIdentityComparator(PPIComparator):
         self.aligner = aligner
 
     def compare(self, ppi0: Path, ppi1: Path) -> dict:
+        """Compare two protein-protein interactions.
+
+        Args:
+            ppi0 (Path): Path to the first .pdb file containing a PPI. It is recommended to use
+                 the files produced by the `ppiref.extraction.PPIExtractor` class.
+            ppi1 (Path): Path to the second .pdb file containing a PPI. It is recommended to use
+                 the files produced by the `ppiref.extraction.PPIExtractor` class.
+
+        Returns:
+            dict: Dictionary with two PPI ids being compared and maximum pairwise sequence identity
+                 between chains from different PPIs.
+        """
+        # Parse input file names
         ppi_id0, ppi_id1 = ppi0.stem, ppi1.stem
         pdb_id0, pdb_id1 = path_to_pdb_id(ppi0), path_to_pdb_id(ppi1)
+        partners0 = path_to_partners(ppi0)
+        partners1 = path_to_partners(ppi1)
 
+        # Get paths to complete .pdb files (with full chains)
         if self.nested_pdb_dir:
             pdb0 = self.pdb_dir / ppi_id_to_nested_suffix(pdb_id0)
             pdb1 = self.pdb_dir / ppi_id_to_nested_suffix(pdb_id1)
@@ -290,12 +414,11 @@ class SequenceIdentityComparator(PPIComparator):
             pdb0 = self.pdb_dir / (path_to_pdb_id(ppi0) + '.pdb')
             pdb1 = self.pdb_dir / (path_to_pdb_id(ppi1) + '.pdb')
 
-        partners0 = path_to_partners(ppi0)
-        partners1 = path_to_partners(ppi1)
-
+        # Get full sequences for each PPI
         seqs0 = get_sequences(pdb0)
         seqs1 = get_sequences(pdb1)
 
+        # Calculate pairwise sequence identity for all pairs of chains from different PPIs
         pairwise = []
         for p0 in partners0:
             for p1 in partners1:
@@ -306,6 +429,7 @@ class SequenceIdentityComparator(PPIComparator):
         return {'PPI0': ppi_id0, 'PPI1': ppi_id1} | metrics
     
     def _sequence_identity(self, seq0: str, seq1: str) -> float:
+        """Calculate sequence identity between two protein sequences with a BioPython Aligner."""
         alignments = self.aligner.align(seq0, seq1)
         alignment = next(alignments)
         
@@ -326,20 +450,37 @@ class IDist(PPIComparator):
 
     def __init__(
         self,
-        pdb_dir: Optional[Path] = None,
         kind: IDIST_EMBEDDING_KIND = 'amino_acid_one_hot',
         near_duplicate_threshold: float = 0.04,
+        pdb_dir: Optional[Union[str, Path]] = None,
         *args,
         **kwargs
     ):
+        """Implementation of iDist protein-protein interaction comparator
+        (https://arxiv.org/abs/2310.18515).
+        
+        The comparator uses a simple non-parametrized one-step
+         message passing to embed protein-protein interfaces and then compares them using Euclidean
+         distance. iDist approximates 3D alignment-based methods, iAlign and US-align, on detecting
+         near-duplicate protein-protein interfaces. iDist is more than 100 times faster and finds
+         same near duplicates with 99% precision and 97% recall.
+
+        Args:
+            kind (IDIST_EMBEDDING_KIND, optional): Kind of node embeddings to use for message
+                 passing. Defaults to 'amino_acid_one_hot' which leads to the best alignment 
+                 approximation performance.
+            near_duplicate_threshold (float, optional): Threshold on Euclidean distance to detect
+                 near-duplicate interfaces. It is recommended to use the threshold of 0.04 for the
+                 interfaces extracted with the 6A cutoff radius between heavy atoms, and the 
+                 threshold of 0.03 with the 10A cutoff. Please see the paper for details. Defaults
+                 to 0.04.
+            pdb_dir (Optional[Path], optional): Directory storing complete .pdb files that were used
+                 to exctract interfaces from. Should be not None if `kind == 'esm_embedding'`, as the
+                 ESM protein language model is used with full protein sequences. Defaults to None.
+        """
         super().__init__(*args, **kwargs)
 
-        # Prepare directory for complete (or dimer) PDB files
-        self.pdb_dir = pdb_dir
-        if pdb_dir is not None:
-            pdb_dir.mkdir(exist_ok=True, parents=True)
-
-        # Prepare graph features construction
+        # Prepare node features construction
         self.kind = kind
         if kind == 'amino_acid_one_hot':
             dimer_node_metadata_functions = []
@@ -352,14 +493,8 @@ class IDist(PPIComparator):
             ppi_node_metadata_functions = []
         else:
             raise ValueError('Unknown `kind` value.')
-        
-        self.near_duplicate_threshold = near_duplicate_threshold
 
-        self.graphein_dimer_config = ProteinGraphConfig(
-            edge_construction_functions=[],
-            node_metadata_functions=dimer_node_metadata_functions,
-            insertions=True,
-        )
+        # Init Graphein graph construction config for interfaces (or PPIs)
         self.graphein_ppi_config = ProteinGraphConfig(
             edge_construction_functions=[
                 partial(add_k_nn_edges, k=self.MAX_INTERFACE_SIZE,
@@ -373,14 +508,47 @@ class IDist(PPIComparator):
             insertions=True
         )
 
+        # Init Graphein graph construction config for complete complexes (or dimers)
+        self.graphein_dimer_config = ProteinGraphConfig(
+            edge_construction_functions=[],
+            node_metadata_functions=dimer_node_metadata_functions,
+            insertions=True,
+        )
+
+        # Init near-duplicate threshold
+        self.near_duplicate_threshold = near_duplicate_threshold
+
+        # Init directory for complete (or dimer) PDB files
+        self.pdb_dir = pdb_dir
+        if self.pdb_dir is not None:
+            self.pdb_dir = Path(self.pdb_dir)
+            if not self.pdb_dir.exists():
+                self.pdb_dir.mkdir(parents=True, exist_ok=True)
+
+        # Init cache for embeddings
         self.embeddings = dict()
+
+        # Init index for near-duplicate detection
         self.neigh = None
 
     def compare(
         self,
-        path0: Path,
-        path1: Path
+        path0: Union[Path, str],
+        path1: Union[Path, str]
     ) -> dict:
+        """Compare two protein-protein interfaces.
+
+        Args:
+            ppi0 (Union[Path, str]): Path to the first .pdb file containing a PPI. It is recommended
+                 to use the files produced by the `ppiref.extraction.PPIExtractor` class.
+            ppi1 (Union[Path, str]): Path to the second .pdb file containing a PPI. It is 
+                 recommended to use the files produced by the `ppiref.extraction.PPIExtractor`
+                 class.
+
+        Returns:
+            dict: Dictionary with two PPI ids being compared and the resulting iDist distance
+                 (Euclidean distance in the embedding space).
+        """
         path0, path1 = Path(path0), Path(path1)
         pdb0, pdb1 = path0.stem, path1.stem
 
@@ -388,7 +556,7 @@ class IDist(PPIComparator):
         emb0 = self.embed(path0)
         emb1 = self.embed(path1)
         metrics = {
-            'Euclidean distance': np.linalg.norm(emb0 - emb1),
+            'iDist': np.linalg.norm(emb0 - emb1),
             # 'L1': np.linalg.norm(emb0 - emb1, ord = 1),
             # 'Cosine Similarity':
             #     np.dot(emb0, emb1) / (np.linalg.norm(emb0) * np.linalg.norm(emb1))
@@ -400,36 +568,72 @@ class IDist(PPIComparator):
     # TODO Accelerate with sklearn pairwise
     def compare_all_against_all(
         self,
-        ppis0: Iterable[Path],
-        ppis1: Iterable[Path],
+        ppis0: Iterable[Path] = None,
+        ppis1: Iterable[Path] = None,
+        ppi_pairs: Iterable[Iterable[Path]] = None,
         embed: bool = True
     ) -> pd.DataFrame:
+        """Compare all PPIs from one set against all PPIs from another set efficiently using iDist.
+
+        Args:
+            ppis0 (Iterable[Path], optional): First set of PPI paths. Defaults to None.
+            ppis1 (Iterable[Path], optional): Second set of PPI paths. Defaults to None.
+            ppi_pairs (Iterable[Iterable[Path]], optional): Pre-defined pairs to compare instead of
+                 complete pair-wise comparison of two sets. Defaults to None.
+            embed (bool, optional): If set to True, embeds all PPIs before comparison not to repeat
+                 same embeddign twice. Defaults to True.
+
+        Returns:
+            pd.DataFrame: Data frame with comparison results. The data frame has two columns
+                 corresponding to pairs of PPI ids, and an additional column with iDist distances.
+        """
+        # Parse input
+        if ppis0 is not None and ppis1 is not None:
+            ppi_pairs = list(itertools.product(ppis0, ppis1))
+        elif ppi_pairs is None:
+            raise ValueError('Input pairs are not specified.')
+
         # Embed PPIs
         if embed:
-            ppis = set(ppis0) | set(ppis1)
+            if ppis0 is not None and ppis1 is not None:
+                ppis = set(ppis0) | set(ppis1)
+            else:  # ppi_pairs is not None
+                ppis = set(itertools.chain(*ppi_pairs))
             self.embed_parallel(ppis)
 
-        # Compare all PPIs from first set against all from second set
-        pairs_to_compare = itertools.product(ppis0, ppis1)
-        df = [self.compare(*x) for x in pairs_to_compare]
+        # Compare PPIs pairwise
+        df = [self.compare(*x) for x in ppi_pairs]
         df = pd.DataFrame(df)
         return df
 
     def embed(self, ppi: Path, store: bool = True) -> np.array:
+        """Embed a protein-protein interface.
+
+        Args:
+            ppi (Path): Path to the .pdb file containing a PPI. It is recommended to use the files
+                 produced by the `ppiref.extraction.PPIExtractor` class.
+            store (bool, optional): Set to True to store the embedding in cache. Defaults to True.
+
+        Returns:
+            np.array: PPI interface embedding.
+        """
         ppi_id = ppi.stem
         ppi = str(ppi)
         if self.kind == 'esm_embedding':
             dimer = self._ppi_to_pdb(ppi)
             dimer = str(dimer)
 
+        # Get embedding from cache
         if ppi_id in self.embeddings:
             return self.embeddings[ppi_id]
 
-        # Construct PPI graph
+        # Construct interface graph
         g_ppi = construct_graph(
             config=self.graphein_ppi_config, path=ppi, verbose=False
         )
 
+        # Construct complete dimer graph and transfer embeddings to interface subgraph if ESM
+        # embeddings are used
         if self.kind == 'esm_embedding':
             # Construct protein graph for complete dimer structure
             g_dimer = construct_graph(
@@ -443,13 +647,15 @@ class IDist(PPIComparator):
             for n in g_ppi.nodes():
                 g_ppi.nodes[n]['esm_embedding'] = \
                     g_dimer.nodes[n]['esm_embedding']
+                
+        # Rename node features if Meiler embeddings are used
         elif self.kind == 'meiler_embedding':
             for v in g_ppi.nodes():
                 g_ppi.nodes[v]['meiler_embedding'] = \
                     g_ppi.nodes[v]['meiler'].values
 
+        # Aggregate neighborhoods (non-parametrized one-step message passing)
         # Note: Can be significantly accelerated via graph-level matmuls
-        # Aggregate neighborhoods
         for v in g_ppi.nodes():
             msg_inter = []
             msg_intra = []
@@ -479,6 +685,15 @@ class IDist(PPIComparator):
         return embedding
 
     def embed_without_exception(self, ppi: Path) -> np.array:
+        """Embed a PPI and catch exceptions to avoid breaking the parallel execution.
+
+        Args:
+            ppi (Path): Path to the .pdb file containing a PPI. It is recommended to use the files
+                 produced by the `ppiref.extraction.PPIExtractor` class.
+
+        Returns:
+            np.array: PPI interface embedding.
+        """
         try:
             embedding = self.embed(ppi)
         except Exception as exc:
@@ -490,6 +705,12 @@ class IDist(PPIComparator):
         return embedding
 
     def embed_parallel(self, ppis: Iterable[Path]) -> None:
+        """Embed a set of PPIs in parallel and store in cache.
+
+        Args:
+            ppis (Iterable[Path]): Paths to the .pdb files containing PPIs. It is recommended to use
+                 the files produced by the `ppiref.extraction.PPIExtractor` class.
+        """
         # Adapt dict for multi-processing
         if self.parallel_kind == 'processes':
             self.embeddings = multiprocessing.Manager().dict()
@@ -504,6 +725,13 @@ class IDist(PPIComparator):
         self.embeddings = dict(self.embeddings)
 
     def deduplicate_embeddings(self) -> None:
+        """Deduplicate embeddings based on the threshold Euclidean distance between them. 
+        
+        The method iteratively removes embeddings that are closer than the threshold to any other
+         embedding while making only one-sided comparisons (i.e. a<->b but not b<->a). Since the 
+         number of embeddings may be large, the method processes the pairwise distances matrix
+         in chunks of consecuite rows. 
+        """
         df_emb = self.get_embeddings()
         pad_val = -1
 
@@ -530,7 +758,7 @@ class IDist(PPIComparator):
         chunk_size = len(next(get_chunks()))
         n_chunks = int(np.ceil(len(df_emb) / chunk_size))
         
-        # Run
+        # Run deduplication over chunks
         idx_to_remove = []
         for chunk in tqdm(get_chunks(), total=n_chunks, desc='Processing adjacency chunks'):
             chunk = chunk[chunk != pad_val]
@@ -543,13 +771,30 @@ class IDist(PPIComparator):
         }
 
     def build_index(self) -> None:
+        """Build an index for fast near-duplicate detection based on Euclidean distance between 
+        embeddings.
+        """
         self.neigh = sklearn.neighbors.NearestNeighbors(radius=self.near_duplicate_threshold)
         self.neigh.fit(self.get_embeddings())
 
-    def query(self, q: np.array) -> list[str]:
+    def query(self, q: np.array) -> np.array:
+        """Query the index for near-duplicate embeddings.
+
+        Args:
+            q (np.array): Input query embedding(s). May be a single embedding or a stack of multiple
+                 embeddings.
+
+        Returns:
+            np.array: If a single query embedding is provided, returns an array of near-duplicate
+                 PPI ids. If multiple query embeddings are provided, returns an array of arrays of
+                 near-duplicate PPI ids. The ids are sorted by their distance to the query embedding(s),
+                 with the first id being the closest near duplicate.
+        """
+        # Build index if not built yet
         if self.neigh is None:
             self.build_index()
 
+        # Query index
         assert len(q.shape) in [1, 2]
         if len(q.shape) == 1:  # single query vector
             neigh_dist, neigh_ind = self.neigh.radius_neighbors(np.expand_dims(q, 0), sort_results=True)
@@ -564,12 +809,25 @@ class IDist(PPIComparator):
         return neigh_dist, neigh_ind
 
     def get_embeddings(self) -> pd.DataFrame:
+        """Get the embeddings stored in the cache as a Pandas data frame.
+
+        Returns:
+            pd.DataFrame: Data frame with embeddings in rows indexed by PPI ids.
+        """
         return pd.DataFrame(dict(self.embeddings)).T
     
     def write_embeddings(self, path: Path) -> None:
+        """Write the embeddings stored in the cache to a .csv file."""
         self.get_embeddings().to_csv(path)
 
     def read_embeddings(self, df: Union[Path, pd.DataFrame], dropna: bool = False) -> None:
+        """Read embeddings from a .csv file or a Pandas data frame and store them in the cache.
+
+        Args:
+            df (Union[Path, pd.DataFrame]): Pandas data frame with embeddings.
+            dropna (bool, optional): Drop rows (embeddings) containing NaN values. NaN values may
+                 appear if iDist fails to embed some PPIs. Defaults to False.
+        """
         if isinstance(df, Path):
             df = pd.read_csv(df, index_col=0)
         if dropna:
@@ -579,6 +837,17 @@ class IDist(PPIComparator):
         self.embeddings = embeddings
 
     def _ppi_to_pdb(self, ppi: Path) -> Path:
+        """Convert a path to a PPI interface to a path to a complete PDB file based on the directory
+         specified in the `pdb_dir` class attribute. If files are not found in the directory, they
+         are downloaded from the PDB database.
+
+        Args:
+            ppi (Path): Path to the .pdb file containing a PPI interface. It is recommended to use 
+                 the files produced by the `ppiref.extraction.PPIExtractor` class.
+
+        Returns:
+            Path: Path to the corresponding .pdb file containing the complete interaction structure.
+        """
         if self.pdb_dir is None:
             raise ValueError('`pdb_dir` is not specified.')
 
@@ -598,16 +867,31 @@ class IDist(PPIComparator):
 
 
 class MMSeqs2PPIRetriever:
-
     DEFAULT_DB = PPIREF_DATA_DIR / 'ppiref/ppi_6A_stats/mmseqs_db/db'
 
     def __init__(
         self,
         db: Union[str, Path] = DEFAULT_DB,
-        ppi_split: str = 'ppiref_6A_filtered', # PPI ids to consider (all proper PPIs by default)
+        ppi_split: str = 'ppiref_6A_filtered',
         ppi_fold: str = 'whole',
         verbose: bool = False,
     ):
+        """Retriever of similar protein-protein interactions using MMseqs2 sequence similarity
+             search (https://www.nature.com/articles/nbt.3988). Specifically, this class retrieves 
+             PPIs containing similar sequences to any of the sequences involved in the query PPI.
+
+        Args:
+            db (Union[str, Path], optional): MMseqs2 data base. Please see the MMseqs2 documentation
+                 on how to create a data base. Defaults to `MMSeqs2PPIRetriever.DEFAULT_DB`, which
+                 indexes all protein sequences present in the PPIRef50K (6A version) dataset, 
+                 compirising all proper protein-protein interactions from PDB.
+            ppi_split (str, optional): Split of PPI ids to consider. In combination with the 
+                 `ppi_fold` argument, specifies the subset of PPIs to consider from the data base.
+                 Defaults to 'ppiref_6A_filtered', which corresponds to complete PPIRef50K.
+            ppi_fold (str, optional): Subset (fold) of PPI ids to consider from the specified split. 
+                 Defaults to 'whole' to consider all PPIs from the split.
+            verbose (bool, optional): If set to True prints MMseqs2 log. Defaults to False.
+        """
         self.db = Path(db)
         assert db.is_file(), f'MMSeqs2 databsase file {db} does not exist.'
         self.verbose = verbose
@@ -617,7 +901,19 @@ class MMSeqs2PPIRetriever:
         self.ppis = [(ppi, ppi.split('_', 1)[0], ppi.split('_')[1:]) for ppi in ppis]
 
     def query(self, seq: Union[str, Path]) -> tuple[list[float], list[str], list[str]]:
-        # Prepare input
+        """Query the MMseqs2 data base for protein-protein interactions with similar sequences.
+
+        Args:
+            seq (Union[str, Path]): Path to a query sequence in the fasta format.
+
+        Returns:
+            tuple[list[float], list[str], list[str]]: Tuple with three lists storing 3-tuples of
+                 PPI sequence similarity matches. The first list contains MMseqs2 sequence similarity 
+                 scores, the second list contains ids of the corresponding matched PPI entries, and 
+                 the third list contains chain names of the matched sequences from the corresponding 
+                 PPI entries.
+        """
+        # Prepare query sequence
         if isinstance(seq, str):
             if seq.endswith('.fasta'):
                 seq = Path(seq)

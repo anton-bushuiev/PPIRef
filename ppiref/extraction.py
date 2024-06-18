@@ -1,9 +1,9 @@
 import os
+import re
 import copy
 import itertools
 import traceback
 import datetime
-import multiprocessing as mp
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from typing import Union, Literal, Sequence, Iterable, Optional
 from pathlib import Path
@@ -43,17 +43,38 @@ class PPIExtractor:
         noppi_files: bool = True,
         input_format: Literal['pdb', 'haddock'] = 'pdb'
     ) -> None:
-        """_summary_
-
-        Note: With kind=='bsa' and pre-selection with radius ... TODO
+        """Extract protein-protein interfaces from .pdb files.
 
         Args:
-            out_dir: _description_
-            kind: _description_. Defaults to 'heavy'.
-            radius: _description_. Defaults to 10..
-            bsa: Calculate and write BSA to output .pdb files. Defaults to False because 
-                computationally expensive.
-            join: TODO ... . Enables to extract beyond dimeric interfaces.
+            out_dir: Path to output directory where extracted interfaces are written as .pdb files.
+            kind: Kind of interfaces to extract. The 'heavy' option leads to extracting interfaces
+                 based on the interatomic distances between heavy atoms. Specifically, if heavy atoms
+                 from different proteins are close enough (within the `radius`), they form an interface.
+                 The 'bsa' option extracts interfaces based on the buried residues determined by their
+                 buried surface area (BSA). Defaults to 'heavy'.
+            radius: Maximum distance in Angstroms (A) between heavy atoms from different proteins to
+                 be considered interacting. Defaults to 10.
+            expansion_radius: Expand interface by adding residues within the specified radius. 
+                 Defaults to 0.
+            bsa: Calculate and write buried surface area (BSA) to output .pdb files. If set to true
+                 may lead to large computational overhead. Defaults to False.
+            join: If True joins dimeric interfaces into oligomeric interfaces based on shared
+                 residues. Defaults to False.
+            nest_out_dir: If True, the output .pdb files are written into subdirectories named by
+                 the middle two characters of the PDB ID. This leads to the file organization
+                 consistent with PDB. For example the A-B interaction from abcd.pdb is stored as 
+                 `out_dir/bc/abcd_A_B.pdb` instead of `out_dir/abcd_A_B.pdb`. Defaults to True.
+            max_workers: Maximum number of workers to use for parallel processing. Defaults to
+                 `os.cpu_count() - 2`.
+            chunk_size: Number of files to process in a single worker at a time. Defaults to 1.
+            verbose: If True, print progress messages on each extraction. This option may be
+                 useful for debugging. Defaults to False.
+            noppi_files: If True, write `.<pdb_id>.noppi` files for PDB files that do not contain any
+                 PPIs. This option is useful in combination with `PPIExtractor.extract_parallel` with
+                 `resume=True` not to attempt reextracting PPIs from files that do not contain any.
+                 Defaults to True.
+            input_format: Format of input .pdb files based on their origin. Defaults to 'pdb'
+                 corresponding to the Protein Data Bank origin.
         """
         self.out_dir = Path(out_dir)
         self.kind = kind 
@@ -76,20 +97,21 @@ class PPIExtractor:
         pdb_path: Union[Path, str],
         partners: Optional[Iterable[str]] = None
     ) -> None:
-        """Extract interfaces from `pdb_path` and write as .pdb files. The files will be named
-        based on the input file names and the interacting chains. For example the A-B interaction
-        from abcd.pdb will be stored as `abcd_A_B.pdb`. Please note that if the input file name contains
-        underscores (`_`), they are replaced with dashes (`-`) in the output file name.
+        """Extract interfaces from `pdb_path` and write as .pdb files. 
+        
+        The files will be named based on the input file names and the interacting chains. For
+         example the A-B interaction from abcd.pdb will be stored as `abcd_A_B.pdb`. Please note
+         that if the input file name contains underscores (`_`), they are replaced with dashes (`-`)
+         in the output file name.
 
         Args:
             pdb_path: Path to .pdb file to extract PPIs from.
             partners: If not None the interface is extracted between specified chains. If partners
-                is None all dimeric interfaces from the file are extracted. Defaults to None.
+                 is None all dimeric interfaces from the file are extracted. Defaults to None.
         """
         # Preprocess args
         pdb_path = Path(pdb_path)
-        pdb_id = path_to_pdb_id(pdb_path)
-        pdb_stem = pdb_path.stem.replace('_', '-')
+        pdb_id = self._input_path_to_id(pdb_path)
         out_dir = self.out_dir / pdb_id[1:3] if self.nest_out_dir else self.out_dir
         out_dir.mkdir(exist_ok=True, parents=True)
 
@@ -118,7 +140,7 @@ class PPIExtractor:
         if partners is not None:
             assert set(partners).issubset(chains), f'Partners {set(partners) - set(chains)} not in PDB file.'
         if len(chains) < 2:
-            self._no_ppi_exit(out_dir, pdb_stem)
+            self._no_ppi_exit(out_dir, pdb_id)
             return
 
         # Obtain inter-chain residue-residue adjacency matrix
@@ -167,7 +189,7 @@ class PPIExtractor:
 
         # Write .<pdb_id>.noppi file if no interfaces
         if not len(interfaces):
-            self._no_ppi_exit(out_dir, pdb_stem)
+            self._no_ppi_exit(out_dir, pdb_id)
             return
 
         # Write interfaces to .pdb files
@@ -180,11 +202,13 @@ class PPIExtractor:
             self._write_to_pdb(
                 interface,
                 atom_df,
-                out_dir / f'{pdb_stem}_{suffix}.pdb',
+                out_dir / f'{pdb_id}_{suffix}.pdb',
                 stats=interface_stats
             )
 
     def _no_ppi_exit(self, out_dir: Path, pdb_stem: str):
+        """Write .<pdb_id>.noppi file and exit extraction if no PPIs are found.
+        """
         if self.noppi_files:
             noppi_file = out_dir / f'.{pdb_stem}{NOPPI_EXTENSION}'
             noppi_file.touch()
@@ -200,13 +224,14 @@ class PPIExtractor:
 
         Args:
             in_dir: Input directory with .pdb files to extract PPIs from.
-            in_file_pattern: Pattern to match all input files in `in_dir`. Defaults to '*.pdb'.
+            in_file_pattern: Regular expression pattern to match all input files in `in_dir`.
+                 Defaults to '.*\.pdb'.
             partition: Fractional partition of input files to process. For example, (0., 0.5) will
-                process the first half of the files. This isuseful, when extracting in the data 
-                parallel way across multiple nodes. Defaults to (0., 1.).
+                 process the first half of the files. This isuseful, when extracting in the data 
+                 parallel way across multiple nodes. Defaults to (0., 1.).
             resume: If set to True, will check what .pdb files were already processed based on the
-                resulting files in the output directory, and skip them for processing. Defaults to
-                True.
+                 resulting files in the output directory, and skip them for processing. Defaults to
+                 True.
         """
         in_dir = Path(in_dir)
 
@@ -221,7 +246,13 @@ class PPIExtractor:
                       + list(self.out_dir.rglob(f'*{NOPPI_EXTENSION}'))
             out_files = tqdm(out_files, desc='Collecting processed files')
             processed_pdbs = set(map(path_to_pdb_id, out_files))
-            inputs = list(filter(lambda path: path_to_pdb_id(path) not in processed_pdbs, inputs))
+            inputs = list(filter(
+                lambda path: self._input_path_to_id(path) not in processed_pdbs,
+                tqdm(inputs, desc='Filtering processed files')
+            ))
+            print(list(processed_pdbs)[:3])
+            print(inputs[:3])
+            print(self._input_path_to_id(inputs[0]), self._input_path_to_id(inputs[1]), self._input_path_to_id(inputs[2]))
         chunks = list(list_to_chunks(inputs, self.chunk_size))
         chunks = get_partition(chunks, *partition)
 
@@ -231,7 +262,6 @@ class PPIExtractor:
                 tmp_dir=Path(f'./.dr_sasa_tmp_dir_{partition[0]}_{partition[1]}_{random_id(20)}'), 
                 auto_clean='instant'  # Not to run out of disk memory
             )
-        # with ProcessPoolExecutor(self.max_workers, mp_context=mp.get_context('fork')) as executor:
         with ProcessPoolExecutor(self.max_workers) as executor:
             future_to_chunk = {
                 executor.submit(self._extract_chunk_paths, chunk): chunk 
@@ -249,6 +279,8 @@ class PPIExtractor:
             self.dr_sasa.clean()
 
     def _extract_chunk_paths(self, pdb_paths: Iterable[Path]) -> None:
+        """Extract interfaces from a chunk of .pdb files sequentially in a single process.
+        """
         for pdb_path in pdb_paths:
             if self.verbose:
                 print(f'[{datetime.datetime.now()}] {os.getpid()}: Starting {pdb_path}')
@@ -261,9 +293,10 @@ class PPIExtractor:
         atom_df: pd.DataFrame,
         chains: Optional[Iterable[str]] = None
     ) -> pd.DataFrame:
-        """Preprocess atom dataframe in-place. Sorts residue identifiers and joins them into
-        `res_ids`column. Applies filtering for protein chains. If `chains` is not only the 
-        corresponding residues will be left.
+        """Preprocess atom dataframe in-place. 
+        
+        Sorts residue identifiers and joins them into `res_ids`column. Applies filtering for protein
+         chains. If `chains` is not None, only the residues from corresponding chains will be left.
         """
         # Rename columns from HADDOCK format
         if self.input_format == 'haddock':
@@ -385,7 +418,16 @@ class PPIExtractor:
         self,
         interfaces: dict[tuple[str], set[Residue]]
     ) -> dict[tuple[str], set[Residue]]:
+        """Join interfaces based on shared residues.
+        """
         raise NotImplementedError()
     
     def _requires_bsa(self) -> bool:
+        """Check if BSA calculation is required for the current extraction settings.
+        """
         return self.bsa or self.kind == 'bsa'
+    
+    def _input_path_to_id(self, path: Union[Path, str]) -> str:
+        """Extract ID from path. ID is a 4-character PDB ID if files originates from PDB.
+        """
+        return path_to_pdb_id(str(path).replace('_', '-'))

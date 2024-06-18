@@ -1,4 +1,3 @@
-import os
 import subprocess
 import shutil
 import shlex
@@ -21,11 +20,24 @@ class DR_SASA:
         verbose: bool = False,
         auto_clean: Literal['lazy', 'instant', 'none'] = 'lazy'
     ) -> None:
-        """Python wrapper for the dr_sasa software (https://github.com/nioroso-x3/dr_sasa_n).
-        
+        """Python wrapper for the dr_sasa software to calculate buried surface area (BSA) for PDB 
+             files (https://github.com/nioroso-x3/dr_sasa_n). Please install the dr_sasa source code
+             and provide the path to the executable.
+
         Args:
-            path: Path to dr_sasa executable. Defaults to DR_SASA_PATH.
-            tmp_dir: Path to temporary dir to store outputs. Defaults to None.
+            path (Union[Path, str], optional): Path to dr_sasa executable. Defaults to DR_SASA_PATH, which
+                 should be used if you follow the instructions from the PPIRef README to install
+                 dr_sasa.
+            tmp_dir (Union[Path, str], optional): Path to a temporary directory to store outputs. 
+                 Defaults to None to create a directory with a random name.
+            verbose (bool, optional): _description_. Defaults to False.
+            auto_clean (Literal['lazy', 'instant', 'none'], optional): Strategy to clean the 
+                 temporary files produced by dr_sasa. The 'lazy' strategy cleans the temporary 
+                 directory on object destruction, 'instant' cleans the files immediately after the 
+                 calculation, and 'none' does not clean the files. Defaults to 'lazy'.
+
+        Notes:
+            - TODO: Remove `tmp_dir` argument and use tempfile module.
         """
         self.path = Path(path)
         self.tmp_dir = Path(tmp_dir) if tmp_dir else Path(f'./.dr_sasa_tmp_dir_{random_id(20)}')
@@ -44,17 +56,15 @@ class DR_SASA:
         self,
         pdb_path: Union[Path, str],
         partners: tuple[str]
-    ) -> tuple[float, set]:
-        """Call dr_sasa executable and return parsed output.
-
-        TODO Extend to classify buried residues according to Levy 2010
+    ) -> tuple[set[Residue], float]:
+        """Call dr_sasa executable and return parsed outputs.
 
         Args:
-            pdb_path: Path to input .pdb file
-            partners: _description_
+            pdb_path (Union[Path, str]): Path to input .pdb file.
+            partners (tuple[str]): Protein chains to calculate the buried surface area between.
 
         Returns:
-            _description_
+            tuple[set[Residue], float]: Set of buried residues and buried surface area (BSA).
         """
         # Prepare args
         pdb_path = Path(pdb_path)
@@ -95,12 +105,18 @@ class DR_SASA:
         return buried_residues, bsa
 
     def clean(self, pdb_stem: Optional[str] = None, partners: Optional[tuple[str]] = None) -> None:
-        """Clean whole temporary directory or one-run files.
+        """Clean whole temporary directory or single-run files.
+
+        Args:
+            pdb_stem (Optional[str]): PDB file stem corresponding to the files to clean. If None, 
+                 clean whole directory.
+            partners (Optional[tuple[str]]): Protein partners from the PDB file corresponding to the
+                 files to clean. If None, clean whole directory.
         """
         if hasattr(self, 'tmp_dir') and self.tmp_dir.is_dir():
             if pdb_stem is None and partners is None:  # Delete all
                 shutil.rmtree(self.tmp_dir)
-            else:  # Delete one-run files
+            else:  # Delete single-run files
                 a, b = partners
                 files = [
                     self.tmp_dir / f'{pdb_stem}.{a}_vs_{b}.by_atom.tsv',
@@ -120,9 +136,13 @@ class DR_SASA:
 
     @staticmethod
     def parse_residue(res: str) -> Residue:
-        """Parse residue in a dr_sasa format into a Residue namedtuple.
+        """Parse residue in the dr_sasa format into a Residue namedtuple.
 
-        E.g. 'VAL/M/14A' -> Residue(chain_id='M', residue_number=14, insertion='A').
+        Args:
+            res (str): Residue in the dr_sasa format ('VAL/M/14A').
+
+        Returns:
+            Residue: Residue namedtuple (Residue(chain_id='M', residue_number=14, insertion='A')).
         """
         _, chain, pos = res.split('/')
         num = ''.join([i for i in pos if i.isdigit() or i == '-'])
