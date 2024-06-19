@@ -250,9 +250,6 @@ class PPIExtractor:
                 lambda path: self._input_path_to_id(path) not in processed_pdbs,
                 tqdm(inputs, desc='Filtering processed files')
             ))
-            print(list(processed_pdbs)[:3])
-            print(inputs[:3])
-            print(self._input_path_to_id(inputs[0]), self._input_path_to_id(inputs[1]), self._input_path_to_id(inputs[2]))
         chunks = list(list_to_chunks(inputs, self.chunk_size))
         chunks = get_partition(chunks, *partition)
 
