@@ -82,6 +82,7 @@ def test_bsa_no_transitive_interactions():
     assert n_ppis  == 7
 
 
+@pytest.mark.skipif(not DR_SASA_PATH.is_file(), reason="dr_sasa not installed")
 def test_bsa_is_radius_subset():
     """Test that the interface defined by buried residues is a subset of the radius-based one with
     sufficiently big raidus.
