@@ -1,3 +1,4 @@
+import pytest
 import shutil
 
 import dill
@@ -5,7 +6,7 @@ import numpy as np
 import pandas as pd
 from biopandas.pdb import PandasPdb
 
-from ppiref.definitions import PPIREF_TEST_DATA_DIR
+from ppiref.definitions import PPIREF_TEST_DATA_DIR, DR_SASA_PATH
 from ppiref.extraction import PPIExtractor
 from ppiref.utils.residue import Residue
 from ppiref.utils.ppipath import path_to_partners
@@ -66,6 +67,7 @@ def test_no_nucleic_acids():
     shutil.rmtree(out_dir)
 
 
+@pytest.mark.skipif(not DR_SASA_PATH.is_file(), reason="dr_sasa not installed")
 def test_bsa_no_transitive_interactions():
     """Test that the BSA-based interface extraction does not suffer from "transitive interactions"
     unlike radius-based extraction. The tested pdb contains 7 chains with a cyclic symmetry of
