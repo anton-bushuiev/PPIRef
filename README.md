@@ -170,10 +170,10 @@ usalign.compare(*ppis)
 > {'PPI0': '1p7z_A_C', 'PPI1': '3p9r_B_D', 'TM1': 0.992, 'TM2': 0.9965, 'RMSD': 0.3, 'ID1': 0.991, 'ID2': 0.996, 'IDali': 0.998, 'L1': 448, 'L2': 446, 'Lali': 445}
 
 # Compare with iDist
-# Low L2 (Euclidean) distance indicates high similarity (below 0.04 is considered near-duplicate for 6A distance interfaces)
+# Low iDist distance indicates high similarity (below 0.04 is considered near-duplicate for 6A distance interfaces)
 idist = IDist()
 idist.compare(*ppis)
-> {'PPI0': '1p7z_A_C', 'PPI1': '3p9r_B_D', 'L2': 0.0026614179313795114, 'L1': 0.006036636849518753 'Cosine Similarity': 0.999777940667365}
+> {'PPI0': '1p7z_A_C', 'PPI1': '3p9r_B_D', 'iDist': 0.0026614179313795114}
 
 # Compare by maximum pairwise sequence identity
 # High sequence identity indicates high similarity
@@ -184,16 +184,16 @@ seqid.compare(*ppis)
 # Compare PPIs pairwise with iDist
 # (possible with other methods as well but has heavy quadratic complexity)
 idist.compare_all_against_all(ppis, ppis)
->            PPI0          PPI1        L2        L1  Cosine Similarity
-> 0  1p7z_A_C.pdb  1p7z_A_C.pdb  0.000000  0.000000           1.000000
-> 1  1p7z_A_C.pdb  3p9r_B_D.pdb  0.002661  0.006037           0.999778
-> 2  3p9r_B_D.pdb  1p7z_A_C.pdb  0.002661  0.006037           0.999778
-> 3  3p9r_B_D.pdb  3p9r_B_D.pdb  0.000000  0.000000           1.000000
+>            PPI0          PPI1     iDist
+> 0  1p7z_A_C.pdb  1p7z_A_C.pdb  0.000000
+> 1  1p7z_A_C.pdb  3p9r_B_D.pdb  0.002661
+> 2  3p9r_B_D.pdb  1p7z_A_C.pdb  0.002661
+> 3  3p9r_B_D.pdb  3p9r_B_D.pdb  0.000000
 ```
 
 ## Deduplicating PPIs
 
-Since iDist is based on a simple vectorization of PPIs, it can be used to deduplicate them based on the Euclidean (L2) distance. The validated threshold used by default is 0.04, suitable for 6A heavy-atom interfaces.
+Since iDist is based on a simple vectorization of PPIs, it can be used to deduplicate them based on the distance thresholding. The validated threshold used by default is 0.04, suitable for 6A heavy-atom interfaces.
 
 ```python
 # Embed PPIs with iDist (without comparing)
