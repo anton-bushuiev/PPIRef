@@ -24,9 +24,12 @@ jobs:
       uses: actions/setup-python@v3
       with:
         python-version: ${{ matrix.python-version }}
-    - name: Install dependencies
+    - name: Install package
       run: |
         python -m pip install --upgrade pip
+        python -m pip install .
+    - name: Install dependencies
+      run: |
         python -m pip install flake8 pytest
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     - name: Lint with flake8
