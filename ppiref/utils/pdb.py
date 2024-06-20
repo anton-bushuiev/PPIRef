@@ -1,3 +1,4 @@
+"""Utilities for working with PDB files."""
 import warnings
 import urllib
 from typing import Optional, Union
@@ -9,12 +10,14 @@ from biopandas.pdb import PandasPdb
 
 
 def get_n_models(pdb_path: Path) -> int:
+    """Get number of models in a .pdb file."""
     pdb = PDBParser(QUIET=True)
     structure = pdb.get_structure('', pdb_path)
     return len(list(structure))
 
 
 def get_first_model(pdb_path: Path, out_path: Optional[Path] = None) -> None:
+    """Extract first model from a .pdb file as a Biopandas data frame."""
     # Parse to first model in biopandas
     ppdb_df = PandasPdb().read_pdb(str(pdb_path))
     with warnings.catch_warnings():
@@ -34,6 +37,7 @@ def download_pdb(
     dir: Optional[Union[Path, str]] = '.',
     path: Optional[Path] = None
 ) -> None:
+    """Download a .pdb file by its ID from the RCSB PDB database."""
     if path is None:
         path = Path(dir) / f'{pdb_id}.pdb'
     urllib.request.urlretrieve(

@@ -1,3 +1,4 @@
+"""Module to process protein surface properties."""
 import subprocess
 import shutil
 import shlex
@@ -20,25 +21,55 @@ class DR_SASA:
         verbose: bool = False,
         auto_clean: Literal['lazy', 'instant', 'none'] = 'lazy'
     ) -> None:
-        """Python wrapper for the dr_sasa software to calculate buried surface area (BSA) for PDB 
-             files (https://github.com/nioroso-x3/dr_sasa_n). Please install the dr_sasa source code
-             and provide the path to the executable.
+        """Wrapper for the dr_sasa software to calculate buried surface area (BSA) for PDB files.
 
+        In order to use the wrapper, build the C++ source code according to the `original doctumentation
+        <https://github.com/nioroso-x3/dr_sasa_n#compiling>`_ and provide the path to the executable.
+        The default value ``ppiref.definitions.DR_SASA_PATH`` assumes building dr_sasa in the
+        `PPIRef/external` directory. The resulting directory structure may look like this:
+        
+        .. code-block:: text
+
+            dr_sasa_n
+            ├── CMakeLists.txt
+            ├── INSTALL
+            ├── LICENSE
+            ├── README.md
+            ├── build
+            ├── doc
+            ├── examples
+            ├── src
+            └── utils
+
+            6 directories, 4 files
+
+        If you find dr_sasa useful, please cite the original paper:
+
+        .. code-block:: bibtex
+
+            @article{ribeiro2019calculation,
+                title={Calculation of accurate interatomic contact surface areas for the quantitative analysis of non-bonded molecular interactions},
+                author={Ribeiro, Judemir and R{\'\i}os-Vera, Carlos and Melo, Francisco and Sch{\"u}ller, Andreas},
+                journal={Bioinformatics},
+                volume={35},
+                number={18},
+                pages={3499--3501},
+                year={2019},
+                publisher={Oxford University Press}
+            }
+        
         Args:
-            path (Union[Path, str], optional): Path to dr_sasa executable. Defaults to DR_SASA_PATH, which
-                 should be used if you follow the instructions from the PPIRef README to install
-                 dr_sasa.
+            path (Union[Path, str], optional): Path to dr_sasa executable. Defaults to 
+                ``ppiref.definitions.DR_SASA_PATH``.
             tmp_dir (Union[Path, str], optional): Path to a temporary directory to store outputs. 
-                 Defaults to None to create a directory with a random name.
-            verbose (bool, optional): _description_. Defaults to False.
+                Defaults to None to create a directory with a random name.
+            verbose (bool, optional): Print dr_sasa log. Defaults to False.
             auto_clean (Literal['lazy', 'instant', 'none'], optional): Strategy to clean the 
-                 temporary files produced by dr_sasa. The 'lazy' strategy cleans the temporary 
-                 directory on object destruction, 'instant' cleans the files immediately after the 
-                 calculation, and 'none' does not clean the files. Defaults to 'lazy'.
-
-        Notes:
-            - TODO: Remove `tmp_dir` argument and use tempfile module.
+                temporary files produced by dr_sasa. The ``'lazy'`` strategy cleans the temporary 
+                directory on object destruction, ``'instant'`` cleans the files immediately after the 
+                calculation, and ``'none'`` does not clean the files. Defaults to ``'lazy'``.
         """
+        # TODO: Remove `tmp_dir` argument and use tempfile module.
         self.path = Path(path)
         self.tmp_dir = Path(tmp_dir) if tmp_dir else Path(f'./.dr_sasa_tmp_dir_{random_id(20)}')
         self.tmp_dir = self.tmp_dir.resolve()  # Make absolute
@@ -47,8 +78,7 @@ class DR_SASA:
         self.auto_clean = auto_clean
 
     def __del__(self):
-        """Clean on destruction.
-        """
+        """Clean on destruction."""
         if self.auto_clean == 'lazy':
             self.clean()
 
@@ -105,13 +135,13 @@ class DR_SASA:
         return buried_residues, bsa
 
     def clean(self, pdb_stem: Optional[str] = None, partners: Optional[tuple[str]] = None) -> None:
-        """Clean whole temporary directory or single-run files.
+        """Clean whole temporary directory or individual single-run files.
 
         Args:
             pdb_stem (Optional[str]): PDB file stem corresponding to the files to clean. If None, 
-                 clean whole directory.
+                cleans the whole directory.
             partners (Optional[tuple[str]]): Protein partners from the PDB file corresponding to the
-                 files to clean. If None, clean whole directory.
+                files to clean. If None, cleans the whole directory.
         """
         if hasattr(self, 'tmp_dir') and self.tmp_dir.is_dir():
             if pdb_stem is None and partners is None:  # Delete all
@@ -139,10 +169,10 @@ class DR_SASA:
         """Parse residue in the dr_sasa format into a Residue namedtuple.
 
         Args:
-            res (str): Residue in the dr_sasa format ('VAL/M/14A').
+            res (str): Residue in the dr_sasa format (``'VAL/M/14A'``).
 
         Returns:
-            Residue: Residue namedtuple (Residue(chain_id='M', residue_number=14, insertion='A')).
+            Residue: Residue namedtuple (``Residue(chain_id='M', residue_number=14, insertion='A')``).
         """
         _, chain, pos = res.split('/')
         num = ''.join([i for i in pos if i.isdigit() or i == '-'])

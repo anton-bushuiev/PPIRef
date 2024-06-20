@@ -1,3 +1,4 @@
+"""Functions to read and write data splits in a standardized way and single JSON format."""
 import json
 import warnings
 import itertools
@@ -17,18 +18,21 @@ def write_split(
     folds: dict[str, Iterable[Union[str, Path]]],
     analyze: bool = True
 ) -> None:
-    """Write data split of protein-protein interactions to .json file.
+    """
+    Write data split of protein-protein interactions to a JSON file.
 
     Args:
-        location (Union[Path, str]): Destination of the split file. May be one of the following:
-            - Path object representing a path to the JSON split file
-            - Absolute path string starting with '/' representing a path to the JSON split file
-            - Name of the split file stored as PPIREF_SPLITS_DIR/<location>.json
+        location (Union[Path, str]): Destination of the split file. This can be:
+        
+            - A name of the split file, which will be stored as ``ppiref.definitions.PPIREF_SPLITS_DIR / f'{location}.json'``.
+            - A Path object representing the path to the JSON split file.
+            - An absolute path string starting with ``'/'`` representing the path to the JSON split file.
+            
         source (Path): Path to the source directory containing PPIs.
-        folds (dict[str, Iterable[Union[str, Path]]]): Dictionary of folds. Each fold is a list of
-             PPIs represented by their names or paths.
-        analyze (bool, optional): Run simple sanity checks, such as no overlapping PPI ids across
-             the folds, if set to True. In case of any issues, warnings are raised. Defaults to True.
+        folds (dict[str, Iterable[Union[str, Path]]]): Dictionary of folds. Each fold (e.g. ``'train'``
+            or ``'val'``) is a list of PPIs represented by their names or paths.
+        analyze (bool, optional): If True, run simple sanity checks such as no overlapping PPI ids
+            across the folds. If any issues are found, warnings are raised. Defaults to True.
     """
     # Process args
     location = _process_location(location)
@@ -78,19 +82,21 @@ def read_split(
     location: Union[Path, str],
     full_paths: bool = True
 ) -> dict[str, list[Union[Path, str]]]:
-    """Read data split of protein-protein interactions from .json file.
+    """
+    Read data split of protein-protein interactions from a JSON file.
 
     Args:
-        location (Union[Path, str]): Source of the split file. May be one of the following:
-            - Path object representing a path to the JSON split file
-            - Absolute path string starting with '/' representing a path to the JSON split file
-            - Name of the split file stored as PPIREF_SPLITS_DIR/<location>.json
-        full_paths (bool, optional): Return full paths instead of ids if set to True. Defaults to
-             True.
+        location (Union[Path, str]): Source of the split file. This can be:
+        
+            - A name of the split file, which is stored as ``ppiref.definitions.PPIREF_SPLITS_DIR / f'{location}.json'``.
+            - A Path object representing the path to the JSON split file.
+            - An absolute path string starting with ``'/'`` representing the path to the JSON split file.
+            
+        full_paths (bool, optional): If set to True, return full paths instead of IDs. Defaults to True.
 
     Returns:
         dict[str, list[Union[Path, str]]]: Dictionary of data folds. Each fold is a list of PPIs 
-             represented by their ids or paths.
+        represented by their IDs or paths.
     """
     location = _process_location(location)
 
@@ -120,21 +126,23 @@ def read_fold(
     """Read a specific data fold from a data split of protein-protein interactions.
 
     Args:
-        location (Union[Path, str]): Source of the split file. May be one of the following:
-            - Path object representing a path to the JSON split file
-            - Absolute path string starting with '/' representing a path to the JSON split file
-            - Name of the split file stored as PPIREF_SPLITS_DIR/<location>.json
+        location (Union[Path, str]): Source of the split file. This can be:
+        
+            - A name of the split file, which is stored as ``ppiref.definitions.PPIREF_SPLITS_DIR / f'{location}.json'``.
+            - A Path object representing the path to the JSON split file.
+            - An absolute path string starting with ``'/'`` representing the path to the JSON split file.
+            
         fold (Union[str, int]): Name of the fold to read. Should match one of the keys in the split
-             dictionary. If 'whole', all PPIs are returned. If '+'-separated string, PPIs from all
-             specified folds are returned. If non-negative int, random sample of that size is
-             returned. Defaults to 'whole'.
-        full_paths (bool, optional): Return full paths instead of ids if set to True. Defaults to
-             True.
-        processed_split (dict[str, list[Path]], optional): Pre-defined split dictionary. Defaults to
-             None.
+            dictionary. If ``'whole'``, all PPIs are returned. If a ``'+'``-separated string, PPIs from all
+            specified folds are returned. If a non-negative int, a random sample of that size is
+            returned. Defaults to ``'whole'``.
+            
+        full_paths (bool, optional): If set to True, return full paths instead of IDs. Defaults to True.
+        
+        processed_split (dict[str, list[Path]], optional): Pre-defined split dictionary. Defaults to None.
 
     Returns:
-        list[Union[Path, str]]: Fold of PPIs represented by the list of their ids or paths.
+        list[Union[Path, str]]: Fold of PPIs represented by the list of their IDs or paths.
     """
     if processed_split is None:
         split = read_split(location, full_paths=full_paths)
@@ -156,16 +164,18 @@ def read_fold(
 def read_split_source(
     location: Union[Path, str]
 ) -> Path:
-    """Read source directory for a data split of protein-protein interactions.
+    """
+    Read source directory containing .pdb files in a data split of protein-protein interactions.
 
     Args:
-        location (Union[Path, str]): Source of the split file. May be one of the following:
-            - Path object representing a path to the JSON split file
-            - Absolute path string starting with '/' representing a path to the JSON split file
-            - Name of the split file stored as PPIREF_SPLITS_DIR/<location>.json
+        location (Union[Path, str]): Source of the split file. This can be:
+        
+            - A name of the split file, which is stored as ``ppiref.definitions.PPIREF_SPLITS_DIR / f'{location}.json'``.
+            - A Path object representing the path to the JSON split file.
+            - An absolute path string starting with ``'/'`` representing the path to the JSON split file.
 
     Returns:
-        Path: Path to the source directory containing PPIs.
+        Path: Path to the source directory containing .pdb files with PPI structures.
     """
     location = _process_location(location)
 
@@ -182,16 +192,18 @@ def read_split_source(
 
 
 def _process_location(location: Union[Path, str]) -> Path:
-    """Convert data split location to Path object.
+    """
+    Convert data split (destination or source) location to a Path object.
 
     Args:
-        location (Union[Path, str]): One of the following:
-            - Path object representing a path to the JSON split file
-            - Absolute path string starting with '/' representing a path to the JSON split file
-            - Name of the split file stored as PPIREF_SPLITS_DIR/<location>.json
+        location (Union[Path, str]): Location of the split file. This can be:
+        
+            - A name of the split file, which is stored as ``ppiref.definitions.PPIREF_SPLITS_DIR / f'{location}.json'``.
+            - A Path object representing the path to the JSON split file.
+            - An absolute path string starting with ``'/'`` representing the path to the JSON split file.
 
     Returns:
-        Path: Path object representing a path to the JSON split file
+        Path: Path object representing the path to the JSON split file.
     """
     if not isinstance(location, str) and not isinstance(location, Path):
         raise ValueError('Wrong `location` type.')
