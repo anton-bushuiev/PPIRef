@@ -1,3 +1,2 @@
 include ppiref/data/splits/*.json
-include ppiref/data/test/*.pdb
-include ppiref/data/test/*.dill
+recursive-include ppiref/data/test *.pdb
