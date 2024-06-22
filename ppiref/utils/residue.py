@@ -1,3 +1,4 @@
+"""Utility functions for working with protein residue."""
 from collections import namedtuple
 
 from Bio.Data.PDBData import protein_letters_1to3

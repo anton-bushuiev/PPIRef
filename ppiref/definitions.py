@@ -1,3 +1,4 @@
+"""Global variables used across the package."""
 import pathlib
 
 PPIREF_NAME = 'PPIRef'

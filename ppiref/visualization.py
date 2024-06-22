@@ -1,3 +1,4 @@
+"""Module for visualizing protein-protein interactions using PyMOL"""
 import itertools
 import os
 from pathlib import Path
@@ -76,11 +77,11 @@ class PyMOL:
         port: int = PyMOLPORT
     ):
         """Python PyMOL wrapper to visualize protein-protein interactions. The wrapper is based on 
-         a more general wrapper implemented in the `graphein` package.
+        a more general wrapper implemented in the `Graphein package <https://graphein.ai/>`_.
 
         Args:
             port (int, optional): Port to use for communication with PyMOL. Defaults to PyMOLPORT
-                 from Graphein.
+                from Graphein.
         """
         self.port = port
         self.session_buffer = []
@@ -98,26 +99,26 @@ class PyMOL:
         letters: bool = True
     ):
         """Display protein-protein interaction using PyMOL. If used in a Jupyter notebook, the 
-         method may also be used to show a static image of the interaction.
+        method may also be used to show a static image of the interaction.
 
         Args:
             ppi_path (Path): Path to a .pdb file containing a PPI. It is recommended to use
-                 a file produced by the `ppiref.extraction.PPIExtractor` class.
+                a file produced by the ``ppiref.extraction.PPIExtractor`` class.
             reuse_session (bool, optional): If set to True, displays PPI in the same session as 
-                 during the previous call. Otherwise, creates a new PyMOL sessions. Defaults to False.
+                during the previous call. Otherwise, creates a new PyMOL sessions. Defaults to False.
             colors (Iterable[str], optional): Two colors to use for two interacting proteins. 
-                Defaults to ('hotpink', 'greencyan').
-            residue_color_sets (Iterable[str], optional): If `color_by_residue` is set to True,
-                 the two provided palettes will be used to color each type of residue in a different
-                 color in two interacting proteins. Please see `PYMOL_COLOR_SETS` from the same
-                 modile for the list of available options. Defaults to ('reds+magentas',
-                 'greens+yellows+oranges').
+                Defaults to ``('hotpink', 'greencyan')``.
+            residue_color_sets (Iterable[str], optional): If ``color_by_residue`` is set to True,
+                the two provided palettes will be used to color each type of residue in a different
+                color in two interacting proteins. Please see ``PYMOL_COLOR_SETS`` from the same
+                modile for the list of available options. Defaults to ``('reds+magentas',
+                'greens+yellows+oranges')``.
             swap_colors (bool, optional): Swap colors for two interacting proteins. Defaults to False.
             transparency (float, optional): Transparency factor from the [0, 1] range. Defaults to 0.95.
             color_by_residues (bool, optional): Color residues of different amino acid types with
-                 different colors. Defaults to False.
+                different colors. Defaults to False.
             sticks (bool, optional): Show amino acids in the stick representation (more detailed).
-                 Defaults to False.
+                Defaults to False.
             letters (bool, optional): Show one-letter codes of amino acid types. Defaults to True.
         """
         # Init PyMOL session
@@ -214,7 +215,8 @@ class PyMOL:
         self.session_buffer.append(pymol)
 
         # Delete fetched PDB file
-        os.remove(f'{pdb_id}.cif')
+        if os.path.exists(f'{pdb_id}.cif'):
+            os.remove(f'{pdb_id}.cif')
 
         return pymol.display()
     

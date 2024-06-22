@@ -18,8 +18,8 @@ def test_dips_reproduction():
     in PPIRef the raw PDBs are stored and residue numbers and insertion codes are read separately
     into Biopandas dataframe. This function does not test insertion codes.
     """
-    path_pdb = PPIREF_TEST_DATA_DIR / '10gs.pdb'
-    path_dips_pair = PPIREF_TEST_DATA_DIR / '10gs.pdb1_0.dill'
+    path_pdb = PPIREF_TEST_DATA_DIR / 'pdb/10gs.pdb'
+    path_dips_pair = PPIREF_TEST_DATA_DIR / 'misc/10gs.pdb1_0.dill'
 
     # Extract interface
     out_dir = PPIREF_TEST_DATA_DIR / 'tmp'
@@ -30,7 +30,7 @@ def test_dips_reproduction():
     interface = set(map(lambda x: Residue(*x, ''), interface))
 
     # Read DIPS interface pair
-    with open(PPIREF_TEST_DATA_DIR / '10gs.pdb1_0.dill', 'rb') as file:
+    with open(PPIREF_TEST_DATA_DIR / 'misc/10gs.pdb1_0.dill', 'rb') as file:
         dips_pair = dill.load(file)
     dfs = [dips_pair.df0, dips_pair.df1]
     for i in range(2):
@@ -54,7 +54,7 @@ def test_no_nucleic_acids():
     # Extact PPIs from complex of DNA and protein mixture
     out_dir = PPIREF_TEST_DATA_DIR / 'tmp'
     ppi_extractor = PPIExtractor(out_dir=out_dir, radius=10.)
-    ppi_extractor.extract(PPIREF_TEST_DATA_DIR / '1a02.pdb')
+    ppi_extractor.extract(PPIREF_TEST_DATA_DIR / 'pdb/1a02.pdb')
 
     # Test no nucleic acid chains in extracted interfaces
     ppi_paths = list((PPIREF_TEST_DATA_DIR / 'tmp').rglob('*.pdb'))
@@ -73,7 +73,7 @@ def test_bsa_no_transitive_interactions():
     unlike radius-based extraction. The tested pdb contains 7 chains with a cyclic symmetry of
     contacts and therefore should contain 7 interactions. Heavy 10A extraction generates 21 PPIs.
     """
-    pdb_path = PPIREF_TEST_DATA_DIR / '1aon_OPQRSTU.pdb'
+    pdb_path = PPIREF_TEST_DATA_DIR / 'misc/1aon_OPQRSTU.pdb'
     out_dir = PPIREF_TEST_DATA_DIR / 'tmp_test_bsa_no_transitive_interactions'
     ppi_extractor = PPIExtractor(out_dir, kind='bsa', radius=6.)
     ppi_extractor.extract(pdb_path)
@@ -88,7 +88,7 @@ def test_bsa_is_radius_subset():
     sufficiently big raidus.
     """
     # Extract
-    pdb_path = PPIREF_TEST_DATA_DIR / '1a02.pdb'
+    pdb_path = PPIREF_TEST_DATA_DIR / 'pdb/1a02.pdb'
     out_dir_bsa = PPIREF_TEST_DATA_DIR / 'tmp_bsa'
     out_dir_radius = PPIREF_TEST_DATA_DIR / 'tmp_radius'
     ppi_extractor_bsa = PPIExtractor(out_dir_bsa, kind='bsa', radius=10.)
@@ -112,7 +112,7 @@ def test_bsa_is_radius_subset():
 def test_expansion_hierarchy():
     """Test that interfaces with gradually increasing expansion radiuses are inclusively ordered.
     """
-    pdb_path = PPIREF_TEST_DATA_DIR / '10gs.pdb'
+    pdb_path = PPIREF_TEST_DATA_DIR / 'pdb/10gs.pdb'
     atoms = []
     for r in (0., 4., 10.):
         out_dir = PPIREF_TEST_DATA_DIR / 'tmp_test_expansion_hierarchy'
@@ -129,7 +129,7 @@ def test_expansion_hierarchy():
 def test_partner_specification():
     """Test correct extraction of a PPI with specified chains.
     """
-    pdb_path = PPIREF_TEST_DATA_DIR / '1ahw.pdb'
+    pdb_path = PPIREF_TEST_DATA_DIR / 'pdb/1ahw.pdb'
     partners = ['A', 'B', 'C']
     out_dir = PPIREF_TEST_DATA_DIR / 'tmp_test_partner_specification'
 
@@ -156,7 +156,7 @@ def test_partner_specification():
 def test_haddock_format():
     """Test that for a HADDOCK file the subset of atoms is extracted.
     """
-    pdb_path = PPIREF_TEST_DATA_DIR / '1MAH-ti5-it0-805.pdb'
+    pdb_path = PPIREF_TEST_DATA_DIR / 'haddock/1MAH-ti5-it0-805.pdb'
     out_dir = PPIREF_TEST_DATA_DIR / 'tmp_test_haddock_format'
     ppi_extractor = PPIExtractor(out_dir, radius=10., input_format='haddock')
     ppi_extractor.extract(pdb_path)

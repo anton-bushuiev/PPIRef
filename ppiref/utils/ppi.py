@@ -1,3 +1,4 @@
+"""Utilities for working with and analyzing PPI files."""
 from pathlib import Path
 from typing import Any, Union
 
@@ -13,14 +14,15 @@ PYMOL = PyMOL()
 
 class PPI:
     def __init__(self, ppi: Union[Path, str]) -> None:
-        """_summary_
+        """This class represents a protein-protein interaction (PPI) defined by its path
+        and provides methods for visualizing and analyzing it.
 
         Args:
             ppi (Union[Path, str]): Either full path or PPI id to get from PPIRef.
         """
         # Process args
         if isinstance (ppi, str) and '.' not in ppi:
-            path = PPIREF_DATA_DIR / 'ppiref/ppi' / ppi_id_to_nested_suffix(ppi)
+            path = PPIREF_DATA_DIR / 'ppiref/ppi_6A' / ppi_id_to_nested_suffix(ppi)
         else:
             path = ppi
         self.path = PPIPath(path)
@@ -37,15 +39,19 @@ class PPI:
         self.stats = dict(remarks.tolist())
 
     def is_dummy(self) -> bool:
+        """Check if the PPI is a dummy file that does not contain any PPIs."""
         return self.path.is_dummy()
 
     def visualize(self, **kwargs):
+        """Visualize the PPI in PyMOL."""
         return PYMOL.display_ppi(self.path, **kwargs)
     
     def n_residues(self) -> int:
+        """Get the number of residues in the PPI."""
         return len(self.ppdb_df.df['ATOM'][['chain_id', 'residue_number', 'insertion']].drop_duplicates())
     
     def _parse_stat_remark(self, remark: str) -> tuple[str, Any]:
+        """Parse a remark entry into a name-value pair."""
         name, val = remark.split(': ', maxsplit=1)
 
         # Name
@@ -64,6 +70,7 @@ class PPI:
 
 
 def sort_partners(ppi_id):
+    """Sort partners in the ``ppi_id``."""
     parts = ppi_id.split('_')
     pdb_id, partners = parts[0], parts[1:]
     return pdb_id + '_' + '_'.join(sorted(partners))

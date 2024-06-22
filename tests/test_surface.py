@@ -18,7 +18,7 @@ def test_dr_sasa_parse_residue():
 
 @pytest.mark.skipif(not DR_SASA_PATH.is_file(), reason="dr_sasa not installed")
 def test_dr_sasa_nmr():
-    pdb_path = PPIREF_TEST_DATA_DIR / '1a0n.pdb'
+    pdb_path = PPIREF_TEST_DATA_DIR / 'pdb/1a0n.pdb'
     dr_sasa = DR_SASA()
     buried_residues, bsa = dr_sasa(pdb_path, ('A', 'B'))
     assert len(set(buried_residues)) == len(buried_residues)

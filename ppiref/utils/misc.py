@@ -1,3 +1,4 @@
+"""Miscellaneous utility functions."""
 import string
 import random
 import os
@@ -13,19 +14,18 @@ from ppiref.definitions import PPIREF_DATA_DIR
 
 
 def random_id(length: int = 20) -> str:
+    """Generate a random ID of a given length."""
     return ''.join(random.choices(string.digits, k=length))
 
 
 def list_to_chunks(lst: list, n: int):
-    """Cut list `lst` into `n` chunks.
-    """
+    """Cut list ``lst`` into ``n`` chunks."""
     for i in range(0, len(lst), n):
         yield lst[i:i + n]
 
 
 def get_partition(lst: list, beg: float, end: float):
-    """Get [`beg`, `end`) partition of the list `lst`.
-    """
+    """Get [``beg``, ``end``) partition of the list ``lst``."""
     if not 0. <= beg <= end <= 1.:
         raise ValueError(
             "Invalid range. beg must be less than or equal to end,"
@@ -44,6 +44,17 @@ def download_from_zenodo(
     project_url: str = 'https://zenodo.org/records/10700674/files/',
     destination_folder: Union[Path, str] = None
 ) -> None:
+    """
+    Download a file from Zenodo and extract its contents.
+
+    Args:
+        file (str): Name of the file to download and unpack. For example, ``'ppi_6A.zip'`` to
+            download all the 6A-interfaces (based on the 6 Angstrom cutoff).
+        project_url (str, optional): URL of the Zenodo project.
+        destination_folder (Union[Path, str], optional): Path to the destination folder. If None, 
+            the folder will be created in the ``ppiref.definitions.PPIREF_DATA_DIR`` directory. 
+            Defaults to None.
+    """
     # Create full file url
     url = project_url + file
     stem = Path(url).stem
