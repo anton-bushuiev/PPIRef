@@ -215,7 +215,8 @@ class PyMOL:
         self.session_buffer.append(pymol)
 
         # Delete fetched PDB file
-        os.remove(f'{pdb_id}.cif')
+        if os.path.exists(f'{pdb_id}.cif'):
+            os.remove(f'{pdb_id}.cif')
 
         return pymol.display()
     
