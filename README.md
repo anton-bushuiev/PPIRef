@@ -1,14 +1,14 @@
-<div align="center">
+<!-- <div align="center"> -->
 
 # PPIRef
 
-</div>
+<!-- </div> -->
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/anton-bushuiev/PPIRef/f967861bd665e36d13dec493f054a1b2a9dd5538/assets/readme-dimer-close-up.png"/>
 </p>
 
-PPIRef is a Python package for working with 3D structures of protein-protein interactions (PPIs). It is based on the PPIRef dataset, comprising all PPIs from the Protein Data Bank (PDB). The package aims to provide standard data and tools for machine learning and data science applications involving protein-protein interaction structures. PPIRef includes the following functionalities:
+[PPIRef](https://github.com/anton-bushuiev/PPIRef/tree/main) is a Python package for working with 3D structures of protein-protein interactions (PPIs). It is based on the PPIRef dataset, comprising all PPIs from the Protein Data Bank (PDB). The package aims to provide standard data and tools for machine learning and data science applications involving protein-protein interaction structures. PPIRef includes the following functionalities:
 
 - ⭐ **Extracting** protein-protein interfaces from .pdb files.
 - ⭐ **Visualizing and analyzing** the properties of PPIs.
@@ -68,11 +68,7 @@ ppi.visualize()
 ```
 
 <p align="center">
-  <img width=500px src="assets/3hch_A_B.png"/>
-</p>
-
-<p align="center">
-  <img width=500px src="https://raw.githubusercontent.com/anton-bushuiev/PPIRef/f967861bd665e36d13dec493f054a1b2a9dd5538/assets/assets/3hch_A_B.png"/>
+  <img width=500px src="https://raw.githubusercontent.com/anton-bushuiev/PPIRef/5fca49ecd0e776a362e6f8dc090f14432b6efbd6/assets/3hch_A_B.png"/>
 </p>
 
 Further, the PPIRef package provides utilities for comparing, deduplicating, and clustering PPI interfaces, as well as for retrieving similar PPIs from PDB by similar interface structure or sequence. Please see the [documentation](TODO) for more details.
