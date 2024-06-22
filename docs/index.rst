@@ -12,6 +12,8 @@ Contents
 .. toctree::
    :maxdepth: 2
 
+   installation
+   ppiref_dataset
    extracting_ppis
    analysing_ppis
    comparing_ppis
