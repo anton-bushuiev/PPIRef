@@ -1,4 +1,4 @@
-m2r2
+m2r2==0.3.3.post2
 sphinx-rtd-theme
-nbsphinx
+nbsphinx==0.9.4
 lxml_html_clean
