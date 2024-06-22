@@ -5,18 +5,18 @@
 </div>
 
 <p align="center">
-  <img src="assets/readme-dimer-close-up.png"/>
+  <img src="https://raw.githubusercontent.com/anton-bushuiev/PPIRef/f967861bd665e36d13dec493f054a1b2a9dd5538/assets/readme-dimer-close-up.png"/>
 </p>
 
-PPIRef is a Python package for working with 3D structures of protein-protein interactions (PPIs). It is based on the PPIRef dataset, comprising all PPIs from Protein Data Bank (PDB). The package aims to provide standard data and tools for machine learning and data science applications involving protein-protein interaction structures. PPIRef includes the following functionalities:
+PPIRef is a Python package for working with 3D structures of protein-protein interactions (PPIs). It is based on the PPIRef dataset, comprising all PPIs from the Protein Data Bank (PDB). The package aims to provide standard data and tools for machine learning and data science applications involving protein-protein interaction structures. PPIRef includes the following functionalities:
 
 - ⭐ **Extracting** protein-protein interfaces from .pdb files.
 - ⭐ **Visualizing and analyzing** the properties of PPIs.
 - ⭐ **Comparing, deduplicating and clustering** PPI interfaces.
 - ⭐ **Retrieving** similar PPIs from PDB by similar interface structure or sequence.
-- ⭐ **Splitting and subsampling** PPIs for machine learning applications.
+- ⭐ **Downloading, splitting and subsampling** prepared PPIs for machine learning applications.
 
-Please see the [documentation](TODO) for usage examples and API reference and [our paper](https://arxiv.org/abs/2310.18515) for additional details.
+Please see the [documentation](TODO) for usage examples and API reference. See also [our paper](https://arxiv.org/abs/2310.18515) for additional details.
 
 ## Quick start 🚀
 
@@ -29,7 +29,7 @@ git clone https://github.com/anton-bushuiev/PPIRef.git
 cd PPIRef; pip install -e .
 ```
 
-Download the dataset using the package.
+Download the dataset using the package (in Python).
 
 ```python
 from ppiref.utils.misc import download_from_zenodo
@@ -71,6 +71,10 @@ ppi.visualize()
   <img width=500px src="assets/3hch_A_B.png"/>
 </p>
 
+<p align="center">
+  <img width=500px src="https://raw.githubusercontent.com/anton-bushuiev/PPIRef/f967861bd665e36d13dec493f054a1b2a9dd5538/assets/assets/3hch_A_B.png"/>
+</p>
+
 Further, the PPIRef package provides utilities for comparing, deduplicating, and clustering PPI interfaces, as well as for retrieving similar PPIs from PDB by similar interface structure or sequence. Please see the [documentation](TODO) for more details.
 
 ## TODO
@@ -93,25 +97,25 @@ The repository is under development. Please do not hesitate to contact us or cre
 ## References
 
 If you find this repository useful, please cite our paper:
-```
+
+```bibtex
 @article{bushuiev2024learning,
   title={Learning to design protein-protein interactions with enhanced generalization},
   author={Anton Bushuiev and Roman Bushuiev and Petr Kouba and Anatolii Filkin and Marketa Gabrielova and Michal Gabriel and Jiri Sedlar and Tomas Pluskal and Jiri Damborsky and Stanislav Mazurenko and Josef Sivic},
   booktitle={ICLR 2024 (The Twelfth International Conference on Learning Representations)},
-  url={https://doi.org/10.48550/arXiv.2310.18515}
+  url={https://doi.org/10.48550/arXiv.2310.18515},
   year={2024}
 }
 ```
 
 If relevant, please also cite the corresponding paper on data leakage in protein interaction benchmarks:
 
-
-```
+```bibtex
 @article{bushuiev2024revealing,
   title={Revealing data leakage in protein interaction benchmarks},
   author={Bushuiev, Anton and Bushuiev, Roman and Sedlar, Jiri and Pluskal, Tomas and Damborsky, Jiri and Mazurenko, Stanislav and Sivic, Josef},
   booktitle={ICLR 2024 Workshop on Generative and Experimental Perspectives for Biomolecular Design},
-  url={https://doi.org/10.48550/arXiv.2404.10457}
+  url={https://doi.org/10.48550/arXiv.2404.10457},
   year={2024}
 }
 ```

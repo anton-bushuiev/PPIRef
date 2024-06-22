@@ -6,12 +6,15 @@
 Welcome to PPIRef's documentation!
 ==================================
 
+.. include:: readme.rst
+
 Contents
 ========
 
 .. toctree::
    :maxdepth: 2
 
+   self
    installation
    ppiref_dataset
    extracting_ppis

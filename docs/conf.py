@@ -23,7 +23,7 @@ extensions = [
     'sphinx.ext.mathjax',
     'sphinx.ext.githubpages',
     'sphinx.ext.napoleon',
-    # 'm2r2',
+    'm2r2',
     'nbsphinx'
 ]
 

@@ -1,4 +1,1 @@
-.. PPIRef
-.. ======
-
-.. .. mdinclude:: ../README.md
+.. mdinclude:: ../README.md
