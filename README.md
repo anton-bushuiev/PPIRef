@@ -16,7 +16,7 @@
 - ⭐ **Retrieving** similar PPIs from PDB by similar interface structure or sequence.
 - ⭐ **Downloading, splitting and subsampling** prepared PPIs for machine learning applications.
 
-Please see the [documentation](TODO) for usage examples and API reference. See also [our paper](https://arxiv.org/abs/2310.18515) for additional details.
+Please see the [documentation](https://ppiref.readthedocs.io/en/latest/) for usage examples and API reference. See also [our paper](https://arxiv.org/abs/2310.18515) for additional details.
 
 ## Quick start 🚀
 
@@ -71,7 +71,7 @@ ppi.visualize()
   <img width=500px src="https://raw.githubusercontent.com/anton-bushuiev/PPIRef/5fca49ecd0e776a362e6f8dc090f14432b6efbd6/assets/3hch_A_B.png"/>
 </p>
 
-Further, the PPIRef package provides utilities for comparing, deduplicating, and clustering PPI interfaces, as well as for retrieving similar PPIs from PDB by similar interface structure or sequence. Please see the [documentation](TODO) for more details.
+Further, the PPIRef package provides utilities for comparing, deduplicating, and clustering PPI interfaces, as well as for retrieving similar PPIs from PDB by similar interface structure or sequence. Please see the [documentation](https://ppiref.readthedocs.io/en/latest/) for more details.
 
 ## TODO
 
