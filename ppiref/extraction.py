@@ -244,7 +244,6 @@ class PPIExtractor:
         if resume:
             out_files = list(self.out_dir.rglob('*.pdb')) \
                       + list(self.out_dir.rglob(f'*{NOPPI_EXTENSION}'))
-            out_files = tqdm(out_files, desc='Collecting processed files')
             processed_pdbs = set(map(path_to_pdb_id, out_files))
             inputs = list(filter(
                 lambda path: self._input_path_to_id(path) not in processed_pdbs,
