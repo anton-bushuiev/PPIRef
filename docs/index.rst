@@ -21,6 +21,7 @@ Contents
    analysing_ppis
    comparing_ppis
    deduplicating_ppis
+   clustering_ppis
    retrieving_ppis
    splitting_ppis
    modules
