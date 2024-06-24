@@ -16,6 +16,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import sklearn
+import sklearn.cluster
 from Bio import Align
 from Bio.Align import substitution_matrices
 from tqdm import tqdm
@@ -822,6 +823,34 @@ class IDist(PPIComparator):
         self.embeddings = {
             name: z for name, z in self.embeddings.items() if name not in names_to_remove
         }
+
+    def cluster_embeddings(self) -> np.array:
+        """Cluster embeddings in the iDist cache using the agglomerative clustering algorithm such
+        that there are no near-duplicated PPI interfaces in different clusters.
+
+        The clustering is performed based on the Euclidean distance between embeddings and
+        iteratively connects embeddings that are closer than the near-duplicate threshold of iDist.
+        By using the ``single`` linkage strategy, the algorithm ensures that there is no
+        contamination across clusters (i.e. no near-duplicates in different clusters). The clusters
+        are then suitable for creating leakage-free data splits for machine learning.
+
+        Returns:
+            np.array: Cluster labels for each embedding from cache.
+        """
+        # Get embeddings
+        df_emb = self.get_embeddings()
+
+        # Cluster embeddings
+        agg = sklearn.cluster.AgglomerativeClustering(
+            n_clusters=None,
+            distance_threshold=self.near_duplicate_threshold,
+            metric='euclidean',
+            linkage='single'
+        )
+
+        # Fit and return labels
+        labels = agg.fit_predict(df_emb)
+        return labels
 
     def build_index(self) -> None:
         """Build an index for fast near-duplicate detection based on Euclidean distance between 
