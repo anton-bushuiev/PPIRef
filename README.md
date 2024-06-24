@@ -40,7 +40,7 @@ download_from_zenodo('ppi_6A.zip')
 > Extracting: 100%|██████████| 831382/831382 [02:36<00:00, 5313.49files/s]
 ```
 
-Read the subset/data fold you need (whole PPIRef50K in the example).
+Read the data fold/subset you need (whole PPIRef50K in the example).
 
 ```python
 ppi_paths = read_fold('ppiref_6A_filtered_clustered_04', 'whole')
@@ -109,7 +109,7 @@ If relevant, please also cite the corresponding paper on data leakage in protein
 ```bibtex
 @article{bushuiev2024revealing,
   title={Revealing data leakage in protein interaction benchmarks},
-  author={Bushuiev, Anton and Bushuiev, Roman and Sedlar, Jiri and Pluskal, Tomas and Damborsky, Jiri and Mazurenko, Stanislav and Sivic, Josef},
+  author={Anton Bushuiev and Roman Bushuiev and Jiri Sedlar and Tomas Pluskal and Jiri Damborsky and Stanislav Mazurenko and Josef Sivic},
   booktitle={ICLR 2024 Workshop on Generative and Experimental Perspectives for Biomolecular Design},
   url={https://doi.org/10.48550/arXiv.2404.10457},
   year={2024}
