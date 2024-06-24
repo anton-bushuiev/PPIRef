@@ -497,13 +497,13 @@ IDIST_EMBEDDING_KIND = Literal[
 
 
 class IDist(PPIComparator):
-    MAX_INTERFACE_SIZE = 1_000_000
 
     def __init__(
         self,
         kind: IDIST_EMBEDDING_KIND = 'amino_acid_one_hot',
         near_duplicate_threshold: float = 0.04,
         pdb_dir: Optional[Union[str, Path]] = None,
+        max_interface_size: int = 1_000_000,
         *args,
         **kwargs
     ):
@@ -528,6 +528,7 @@ class IDist(PPIComparator):
             pdb_dir (Optional[Path], optional): Directory storing complete .pdb files that were used
                 to exctract interfaces from. Should be not None if ``kind == 'esm_embedding'``, as
                 the ESM protein language model is used with full protein sequences. Defaults to None.
+            max_interface_size (int, optional): Maximum number of nodes in the interface graph.
         """
         super().__init__(*args, **kwargs)
 
@@ -548,10 +549,10 @@ class IDist(PPIComparator):
         # Init Graphein graph construction config for interfaces (or PPIs)
         self.graphein_ppi_config = ProteinGraphConfig(
             edge_construction_functions=[
-                partial(add_k_nn_edges, k=self.MAX_INTERFACE_SIZE,
+                partial(add_k_nn_edges, k=max_interface_size,
                         long_interaction_threshold=0,
                         exclude_edges=['inter'], kind_name='intra'),
-                partial(add_k_nn_edges, k=self.MAX_INTERFACE_SIZE,
+                partial(add_k_nn_edges, k=max_interface_size,
                         long_interaction_threshold=0,
                         exclude_edges=['intra'], kind_name='inter')
             ],
