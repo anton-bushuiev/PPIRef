@@ -7,6 +7,7 @@
 [![Zenodo badge](https://zenodo.org/badge/DOI/10.5281/zenodo.10700674.svg)](https://doi.org/10.5281/zenodo.10700674)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python package](https://github.com/anton-bushuiev/PPIRef/actions/workflows/python-package.yml/badge.svg)](https://github.com/anton-bushuiev/PPIRef/actions/workflows/python-package.yml)
+![Python Versions](https://img.shields.io/badge/Python-3.9%20%7C%203.10%20%7C%203.11-green.svg)
 
 <!-- </div> -->
 
