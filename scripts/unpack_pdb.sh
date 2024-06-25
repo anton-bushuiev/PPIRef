@@ -1,4 +1,4 @@
-indir="data/pdb"
+indir="./ppiref/data/pdb"
 counter=0; total=$(find $indir -type f -name "*.ent.gz" | wc -l); \
 find $indir -type f -name "*.ent.gz" -print0 | while IFS= read -r -d '' file; \
 do \

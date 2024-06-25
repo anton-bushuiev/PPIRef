@@ -830,7 +830,7 @@ class IDist(PPIComparator):
 
         The clustering is performed based on the Euclidean distance between embeddings and
         iteratively connects embeddings that are closer than the near-duplicate threshold of iDist.
-        By using the ``single`` linkage strategy, the algorithm ensures that there is no
+        By using the ``'single'`` linkage strategy, the algorithm ensures that there is no
         contamination across clusters (i.e. no near-duplicates in different clusters). The clusters
         are then suitable for creating leakage-free data splits for machine learning.
 
