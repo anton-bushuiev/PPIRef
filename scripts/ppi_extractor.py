@@ -32,7 +32,7 @@ from ppiref.definitions import *
 @click.option('--partition_beg', type=float, default=0.)
 @click.option('--partition_end', type=float, default=1.)
 @click.option('--input_format', type=str, default="pdb")
-@click.option('--in_file_pattern', type=str, default="*.pdb")
+@click.option('--in_file_pattern', type=str, default=".*\.pdb$")
 @click.option('--verbose', is_flag=True)
 def main(
     in_dir, out_dir, kind, radius, expansion_radius, bsa, join, nest_out_dir, max_workers,
