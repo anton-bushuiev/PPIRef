@@ -111,7 +111,7 @@ class PPIComparator(ABC):
         kind: str = None,
         desc: str = '',
         chunksize: int = 1000
-    ) -> Iterable:
+    ) -> list:
         """Universal method for executing a function in parallel on a set of inputs. The method
         uses either multi-threading or multi-processing depending on the ``self.parallel_kind``
         attribute.
@@ -127,33 +127,37 @@ class PPIComparator(ABC):
                 workers, which may lead to a significant management overhead. Defaults to 1000.
 
         Returns:
-            Iterable: List of results of applying the function to inputs.
+            List: List of results of applying the function to inputs.
         """
-        # Init executor
         if kind is None:
             kind = self.parallel_kind
-        if kind == 'threads':
-            executor = concurrent.futures.ThreadPoolExecutor(max_workers=self.max_workers)
-        elif kind == 'processes':
-            executor = concurrent.futures.ProcessPoolExecutor(max_workers=self.max_workers)
-        else:
+        if kind not in ['threads', 'processes']:
             raise ValueError("Invalid 'kind'. Use 'threads' or 'processes'.")
 
-        # Run tasks
-        total_tasks = len(inputs)
+        executor_class = concurrent.futures.ThreadPoolExecutor if kind == 'threads' else concurrent.futures.ProcessPoolExecutor
+
+        results = []
         futures = []
-        with tqdm(desc=f'{desc} ({executor._max_workers} {kind})', total=total_tasks) as pbar:
-            # Submit tasks
-            for inp in inputs:
-                future = executor.submit(self._unpacked_call, func, inp)
-                futures.append(future)
-            
-            results = []
-            # Update progress bar as tasks complete
-            for future in concurrent.futures.as_completed(futures):
-                results.append(future.result())
-                pbar.update(1)
-        
+
+        with executor_class(max_workers=self.max_workers) as executor:
+            total_tasks = len(inputs)
+            with tqdm(desc=f'{desc} ({self.max_workers} {kind})', total=total_tasks) as pbar:
+                # Submit tasks in chunks to avoid too many simultaneous tasks
+                for i in range(0, total_tasks, chunksize):
+                    chunk = inputs[i:i + chunksize]
+                    for inp in chunk:
+                        futures.append(executor.submit(self._unpacked_call, func, inp))
+
+                # Update progress bar as tasks complete
+                for future in concurrent.futures.as_completed(futures):
+                    try:
+                        result = future.result()
+                        results.append(result)
+                    except Exception as e:
+                        print(f"Error occurred: {e}")
+                    finally:
+                        pbar.update(1)
+
         return results
     
     def _unpacked_call(self, func, args):
@@ -754,15 +758,16 @@ class IDist(PPIComparator):
             print(traceback.format_exc(), end='\n\n')
             embedding = np.full(1024, np.nan)
         if self.verbose:
-            print(f'Embedded {ppi}')
+            print(f'[PID {os.getpid()}] Embedded {ppi}')
         return embedding
 
-    def embed_parallel(self, ppis: Iterable[Path]) -> None:
+    def embed_parallel(self, ppis: Iterable[Path], chunksize: int = 1) -> None:
         """Embed a set of PPIs in parallel and store in cache.
 
         Args:
             ppis (Iterable[Path]): Paths to the .pdb files containing PPIs. It is recommended to use
                  the files produced by the ``ppiref.extraction.PPIExtractor`` class.
+            chunksize (int): Number of PPIs to embed at a time by a single process.
         """
         # Adapt dict for multi-processing
         if self.parallel_kind == 'processes':
@@ -771,7 +776,7 @@ class IDist(PPIComparator):
         # Embed in parallel
         ppis = list(map(lambda x: (x,), ppis))
         self._execute_task_parallel(
-            self.embed_without_exception, ppis, desc='Embedding PPIs'
+            self.embed_without_exception, ppis, desc='Embedding PPIs', chunksize=chunksize
         )
 
         # Return dict back to ordinary

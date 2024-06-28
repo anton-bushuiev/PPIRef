@@ -22,7 +22,9 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 @click.option('--max_workers', type=int, default=os.cpu_count() - 2)
 @click.option('--seed', type=int, default=None)
 @click.option('--out_file_suff', type=str, default='')
-def main(split, fold, pdb_dir, out_dir, max_workers, seed, out_file_suff):
+@click.option('--chunksize', type=int, default=1)
+@click.option('--verbose', is_flag=True)
+def main(split, fold, pdb_dir, out_dir, max_workers, seed, out_file_suff, chunksize, verbose):
     # Set seed (may be needed if `fold` is an integer number os random samples)
     if seed is not None:
         random.seed(seed)
@@ -34,16 +36,17 @@ def main(split, fold, pdb_dir, out_dir, max_workers, seed, out_file_suff):
     if pdb_dir is None:
         pdb_dir = PPIREF_DATA_DIR / 'pdb'
 
-    # Init path to results directory
+    # Init path to results
     if out_dir is None:
         out_dir = read_split_source(split).parent / 'clustering'
     out_dir.mkdir(exist_ok=True, parents=True)
+    print(f'Results will be saved to {out_dir}')
 
     # Init comparator
-    idist = IDist(pdb_dir=pdb_dir, max_workers=max_workers, verbose=True)
+    idist = IDist(pdb_dir=pdb_dir, max_workers=max_workers, verbose=verbose)
 
     # Embed
-    idist.embed_parallel(ppis)
+    idist.embed_parallel(ppis, chunksize=chunksize)
     df_embeddings = idist.get_embeddings()
     df_embeddings.to_csv(out_dir / f'idist_emb_{split},{fold}{out_file_suff}.csv')
 
