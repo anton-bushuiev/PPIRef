@@ -4,7 +4,7 @@
 
 [![Documentation badge](https://img.shields.io/badge/docs-latest-brightgreen.svg)](https://ppiref.readthedocs.io/en/latest/?badge=latest)
 [![arXiv badge](https://img.shields.io/badge/arXiv-2310.18515-b31b1b.svg)](https://arxiv.org/abs/2310.18515)
-[![Zenodo badge](https://zenodo.org/badge/DOI/10.5281/zenodo.10700674.svg)](https://doi.org/10.5281/zenodo.10700674)
+[![Zenodo badge](https://zenodo.org/badge/DOI/10.5281/zenodo.12587821.svg)](https://doi.org/10.5281/zenodo.12587821)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python package](https://github.com/anton-bushuiev/PPIRef/actions/workflows/python-package.yml/badge.svg)](https://github.com/anton-bushuiev/PPIRef/actions/workflows/python-package.yml)
 ![Python Versions](https://img.shields.io/badge/Python-3.9%20%7C%203.10%20%7C%203.11-green.svg)
@@ -42,7 +42,7 @@ Download the dataset using the package (in Python).
 from ppiref.utils.misc import download_from_zenodo
 from ppiref.split import read_fold
 from ppiref.utils.ppi import PPI
-download_from_zenodo('ppi_6A.zip')
+download_from_zenodo('ppi_6A.zip')  # or for example 'pdb_redo_ppi_10A.zip' for all 10-Angstrom PPIs from PDB-REDO
 > Downloading: 100%|██████████| 6.94G/6.94G [10:19<00:00, 11.2MiB/s]
 > Extracting: 100%|██████████| 831382/831382 [02:36<00:00, 5313.49files/s]
 ```
@@ -88,8 +88,8 @@ The repository is under development. Please do not hesitate to contact us or cre
 
 - [x] PPIRef (6A interfaces) on Zenodo
 - [ ] PPIRef (10A interfaces) on Zenodo (expected in June 2024)
-- [ ] PPIRef version based on the [PDB-REDO database](https://pdb-redo.eu/) for higher-quality side chains in the structures (expected in June 2024)
-- [ ] Docstrings
+- [x] PPIRef version based on the [PDB-REDO database](https://pdb-redo.eu/) for higher-quality side chains in the structures (expected in June 2024)
+- [x] Docstrings
 
 **Enhancements**
 

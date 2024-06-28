@@ -41,7 +41,7 @@ def get_partition(lst: list, beg: float, end: float):
 
 def download_from_zenodo(
     file: str,
-    project_url: str = 'https://zenodo.org/records/10700674/files/',
+    project_url: str = 'https://zenodo.org/records/12587821/files/',
     destination_folder: Union[Path, str] = None
 ) -> None:
     """
