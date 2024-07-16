@@ -4,7 +4,7 @@
 
 [![Documentation badge](https://img.shields.io/badge/docs-latest-brightgreen.svg)](https://ppiref.readthedocs.io/en/latest/?badge=latest)
 [![arXiv badge](https://img.shields.io/badge/arXiv-2310.18515-b31b1b.svg)](https://arxiv.org/abs/2310.18515)
-[![Zenodo badge](https://zenodo.org/badge/DOI/10.5281/zenodo.12601152.svg)](https://doi.org/10.5281/zenodo.12601152)
+[![Zenodo badge](https://zenodo.org/badge/DOI/10.5281/zenodo.12746715.svg)](https://doi.org/10.5281/zenodo.12746715)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python package](https://github.com/anton-bushuiev/PPIRef/actions/workflows/python-package.yml/badge.svg)](https://github.com/anton-bushuiev/PPIRef/actions/workflows/python-package.yml)
 ![Python Versions](https://img.shields.io/badge/Python-3.9%20%7C%203.10%20%7C%203.11-green.svg)
@@ -87,7 +87,7 @@ The repository is under development. Please do not hesitate to contact us or cre
 **Technical**
 
 - [x] PPIRef (6A interfaces) on Zenodo
-- [ ] PPIRef (10A interfaces) on Zenodo (expected in June 2024)
+- [x] PPIRef (10A interfaces) on Zenodo (expected in June 2024)
 - [x] PPIRef version based on the [PDB-REDO database](https://pdb-redo.eu/) for higher-quality side chains in the structures (expected in June 2024)
 - [x] Docstrings
 
