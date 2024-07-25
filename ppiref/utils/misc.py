@@ -75,7 +75,7 @@ def download_from_zenodo(
     response = requests.get(url, stream=True)
     total_size_in_bytes= int(response.headers.get('content-length', 0))
     block_size = 1024  # 1 Kibibyte
-    progress_bar = tqdm(total=total_size_in_bytes, desc='Downloading', unit='iB', unit_scale=True)
+    progress_bar = tqdm(total=total_size_in_bytes, desc=f'Downloading to {destination_folder}', unit='iB', unit_scale=True)
     file_path = os.path.join(destination_folder, f'{stem}.zip')
     with open(file_path, 'wb') as file:
         for data in response.iter_content(block_size):
