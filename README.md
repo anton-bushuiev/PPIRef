@@ -4,7 +4,7 @@
 
 [![Documentation badge](https://img.shields.io/badge/docs-latest-brightgreen.svg)](https://ppiref.readthedocs.io/en/latest/?badge=latest)
 [![arXiv badge](https://img.shields.io/badge/arXiv-2310.18515-b31b1b.svg)](https://arxiv.org/abs/2310.18515)
-[![Zenodo badge](https://zenodo.org/badge/DOI/10.5281/zenodo.12746715.svg)](https://doi.org/10.5281/zenodo.12746715)
+[![Zenodo badge](https://zenodo.org/badge/DOI/10.5281/zenodo.12821413.svg)](https://doi.org/10.5281/zenodo.12821413)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python package](https://github.com/anton-bushuiev/PPIRef/actions/workflows/python-package.yml/badge.svg)](https://github.com/anton-bushuiev/PPIRef/actions/workflows/python-package.yml)
 ![Python Versions](https://img.shields.io/badge/Python-3.9%20%7C%203.10%20%7C%203.11-green.svg)
