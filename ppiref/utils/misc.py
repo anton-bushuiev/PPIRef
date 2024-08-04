@@ -41,7 +41,7 @@ def get_partition(lst: list, beg: float, end: float):
 
 def download_from_zenodo(
     file: str,
-    project_url: str = 'https://zenodo.org/records/12821413/files/',
+    project_url: str = 'https://zenodo.org/records/13208732/files/',
     destination_folder: Union[Path, str] = None
 ) -> None:
     """
@@ -61,7 +61,11 @@ def download_from_zenodo(
 
     # Create fill path to the destination folder
     if destination_folder is None:
-        destination_folder = PPIREF_DATA_DIR / 'ppiref' / stem
+        if stem == 'skempi2':
+            destination_folder = PPIREF_DATA_DIR / stem
+        else:
+            # Save under ppiref directory by default
+            destination_folder = PPIREF_DATA_DIR / 'ppiref' / stem
 
     # Check if the folder already exists
     if (destination_folder).is_dir():
