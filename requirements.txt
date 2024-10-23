@@ -138,7 +138,7 @@ tornado==6.3.2
 tqdm==4.65.0
 traitlets==5.9.0
 typeguard==4.0.0
-typing_extensions==4.5.0
+# typing_extensions==4.5.0
 tzdata==2023.3
 uri-template==1.2.0
 url-normalize==1.4.3
