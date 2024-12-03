@@ -155,6 +155,7 @@ class PPIComparator(ABC):
                         results.append(result)
                     except Exception as e:
                         print(f"Error occurred: {e}")
+                        print(f"Full traceback: {traceback.format_exc()}")
                     finally:
                         pbar.update(1)
 
@@ -381,15 +382,24 @@ class IAlign(PPIComparator):
             else:
                 for line_id, dtypes in metric_lines:
                     line = out_lines[line_id]
-                    metrics |= self._parse_metric_line(line, dtypes)
+                    try:
+                        metrics |= self._parse_metric_line(line, dtypes)
+                    except ValueError:
+                        print(
+                            f'iAlign error comparing ({ppi0}, {ppi1_old})\n'
+                            f'Failed to parse metric line: \"{line}\"',
+                            flush=True
+                        )
                 if self.verbose:
                     print(f'Finished comparing ({ppi0}, {ppi1_old})', flush=True)
             pairwise_metrics.append(metrics)
         
         # Select the comparison with the best hit
-        if pairwise_metrics:
+        if len(pairwise_metrics) > 1:
             resolution_func = max if self.multiple_resolution[1] == 'max' else min
             metrics = resolution_func(pairwise_metrics, key=lambda x: x[self.multiple_resolution[0]])
+        elif len(pairwise_metrics) == 1:
+            metrics = pairwise_metrics[0]
         else:
             metrics = {}
 
