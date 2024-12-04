@@ -669,7 +669,7 @@ class IDist(PPIComparator):
             self.embed_parallel(ppis)
 
         # Compare PPIs pairwise
-        df = [self.compare(*x) for x in ppi_pairs]
+        df = [self.compare(*x) for x in tqdm(ppi_pairs, desc='Comparing PPIs with iDist')]
         df = pd.DataFrame(df)
         return df
 

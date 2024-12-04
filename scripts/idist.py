@@ -54,6 +54,7 @@ def main(split, fold, pairs, pdb_dir, out_dir, max_workers, partition_beg, parti
             ppis0, ppis1 = pickle.load(f)
         pairs = list(zip(ppis0, ppis1))
         pairs = get_partition(pairs, partition_beg, partition_end)
+        inputs = {'ppi_pairs': pairs}
         if verbose:
             print(f'Read {len(pairs)} PPI pairs')
     else:  # Split and fold provided
@@ -62,6 +63,7 @@ def main(split, fold, pairs, pdb_dir, out_dir, max_workers, partition_beg, parti
         ppis1 = read_fold(split, fold)
         ppis0 = get_partition(ppis0, partition_beg, partition_end)
         ppis1 = get_partition(ppis1, partition_beg, partition_end)
+        inputs = {'ppis0': ppis0, 'ppis1': ppis1}
         if verbose:
             print(f'Read {len(ppis0)} and {len(ppis1)} PPIs')
 
@@ -85,7 +87,7 @@ def main(split, fold, pairs, pdb_dir, out_dir, max_workers, partition_beg, parti
     df_embeddings.to_csv(out_dir / f'idist_emb_{name}_{partition_beg}-{partition_end}{out_file_suff}.csv')
 
     # Compare
-    df_comp = idist.compare_all_against_all(ppis0, ppis1, embed=False)
+    df_comp = idist.compare_all_against_all(**inputs, embed=False)
     df_comp.to_csv(out_dir / f'idist_distmat_{name}_{partition_beg}-{partition_end}{out_file_suff}.csv', index=False)
 
 
