@@ -33,15 +33,10 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
-    - name: Install dependencies with fallback for LFS issues
+    - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        # Attempt to install dependencies
-        pip install . || echo "Failed to install dependencies. Retrying without LFS-dependent packages."
-        
-        # If the above fails, install specific packages without LFS files
-        python -m pip install git+https://github.com/anton-bushuiev/mutils.git@main --no-deps --exclude="datasets/*" || echo "mutils install skipped due to LFS issues."
-        pip install .
+        GIT_LFS_SKIP_SMUDGE=1 pip install .
 
     - name: Install additional dependencies
       run: |
