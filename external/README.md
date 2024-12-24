@@ -101,3 +101,16 @@ The `ppiref.comparison.MMSeqs2PPIRetriever` requires MMseqs2 to retrive PPIs fro
   publisher={Nature Publishing Group US New York}
 }
 ```
+
+## Foldseek
+The `ppiref.comparison.FoldseekMMComparator` requires Foldseek. The Foldseek does not need to be clonned locally. Please follow the official [installation guide](https://github.com/gildebert/foldseek?tab=readme-ov-file#installation) to install Foldseek, and cite the original paper if you find the wrapper useful:
+```
+@article{van2022foldseek,
+  title={Foldseek: fast and accurate protein structure search},
+  author={van Kempen, Michel and Kim, Stephanie S and Tumescheit, Charlotte and Mirdita, Milot and Gilchrist, Cameron LM and S{\"o}ding, Johannes and Steinegger, Martin},
+  journal={Biorxiv},
+  pages={2022--02},
+  year={2022},
+  publisher={Cold Spring Harbor Laboratory}
+}
+```

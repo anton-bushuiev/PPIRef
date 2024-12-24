@@ -8,6 +8,7 @@ import traceback
 import multiprocessing
 import subprocess
 import concurrent.futures
+import tempfile
 from abc import ABC
 from typing import Iterable, Callable, Literal, Optional, Union
 from functools import partial
@@ -33,7 +34,7 @@ from mutils.pdb import get_sequences
 
 from ppiref.utils.pdb import download_pdb
 from ppiref.utils.ppipath import path_to_pdb_id, ppi_id_to_nested_suffix, path_to_partners
-from ppiref.definitions import IALIGN_PATH, USALIGN_PATH
+from ppiref.definitions import IALIGN_PATH, USALIGN_PATH, FOLDSEEK_PATH
 
 
 class PPIComparator(ABC):
@@ -418,6 +419,108 @@ class IAlign(PPIComparator):
         metrics = map(lambda x: x.split('='), line.split(','))
         metrics = {metric.strip(): dtypes(val) for metric, val in metrics}
         return metrics
+
+
+class FoldseekMMComparator(PPIComparator):
+    def __init__(
+        self,
+        path: Path = FOLDSEEK_PATH,
+        args: str = '',
+        **kwargs
+    ):
+        """Wrapper for the Foldseek-MM (Foldseek-Multimer) protein-protein interaction comparator. 
+        
+        Foldseek-MM converts each of the partners to a sequence in the 3Di alphabet and then uses MMseqs2 to find similar sequences combined with search for consensus alignment between individual partners.
+
+        Please note that the wrapper does not aim to provide an efficient way to use Foldseek-MM. Using the official puerly C++ based implementation should lead to better performance for a single comparison or database search. This wrapper is implemented for a unified interface with other comparators for large-scale pairwise comparison in parallel.
+
+        To use the wrapper, please install `Foldseek <https://github.com/steineggerlab/foldseek?tab=readme-ov-file#multimersearch>`_ in the `PPIRef/external/foldseek` directory. Alternatively, you can install Foldseek under a different 
+        location but change the ``ppiref.definitions.FOLDSEEK_PATH``. The resulting directory structure may look like this:
+
+        .. code-block:: text
+
+            foldseek
+            ├── bin
+            │   └── foldseek
+            └── README.md
+
+            1 directory, 2 files
+
+        If you find Foldseek-MM useful, please cite the original papers:
+
+        .. code-block:: bibtex
+
+            @article{kim2024rapid,
+                title={Rapid and sensitive protein complex alignment with foldseek-Multimer},
+                author={Kim, Woosub and Mirdita, Milot and Karin, Eli Levy and Gilchrist, Cameron LM and Schweke, Hugo and S{\"o}ding, Johannes and Levy, Emmanuel D and Steinegger, Martin},
+                journal={bioRxiv},
+                pages={2024--04},
+                year={2024},
+                publisher={Cold Spring Harbor Laboratory}
+            }
+
+            @article{van2022foldseek,
+                title={Foldseek: fast and accurate protein structure search},
+                author={van Kempen, Michel and Kim, Stephanie S and Tumescheit, Charlotte and Mirdita, Milot and Gilchrist, Cameron LM and S{\"o}ding, Johannes and Steinegger, Martin},
+                journal={Biorxiv},
+                pages={2022--02},
+                year={2022},
+                publisher={Cold Spring Harbor Laboratory}
+            }
+
+        Args:
+            path (Path, optional): Path to the `foldseek` executable. Defaults to ``ppiref.definitions.FOLDSEEK_PATH``.
+            args (str, optional): Optional command line arguments to be passed to Foldseek-MM.
+                Defaults to ``''``.
+        """
+        super().__init__(**kwargs)
+        self.path = path
+        self.args = args
+
+    def compare(self, ppi0: Path, ppi1: Path) -> dict:
+        """Compare two protein-protein interactions with Foldseek-MM.
+
+        Args:
+            ppi0 (Path): Path to the first .pdb file containing a PPI. It is recommended to use
+                the files produced by the `ppiref.extraction.PPIExtractor` class.
+            ppi1 (Path): Path to the second .pdb file containing a PPI. It is recommended to use
+                the files produced by the `ppiref.extraction.PPIExtractor` class.
+
+        Returns:
+            dict: Dictionary with two PPI ids being compared and comparison metrics produced
+            by Foldseek-MM. If there is no hit detected, the dictionary only contains the PPI ids.
+        """
+        # Prepare PPIs
+        ppi_id0, ppi_id1 = ppi0.stem, ppi1.stem
+        assert ppi0.is_file(), f'File {ppi0} does not exist.'
+        assert ppi1.is_file(), f'File {ppi1} does not exist.'
+
+        # Run Foldseek-MM
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            # Prepare Foldseek-MM arguments
+            tmp_dir = Path(tmp_dir)
+            result_file = tmp_dir / 'result.m8'
+
+            # Run
+            command = f'{self.path} easy-multimersearch {ppi0} {ppi1} {result_file} {tmp_dir} {self.args}'
+            subprocess.run(command, check=False, capture_output=not self.verbose, shell=True)
+
+            # Parse results
+            result_report_file = Path(str(result_file) + '_report')
+            if result_report_file.exists() and result_report_file.stat().st_size > 0:
+                result = pd.read_csv(result_report_file, sep='\t', header=None)
+                result = result.sort_values(by=4, ascending=False)
+                result = result.iloc[0]
+                metrics = {
+                    'Foldseek-MM TM-score (normalized by query PPI0 length)': result[4],
+                    'Foldseek-MM TM-score (normalized by target PPI1 length)': result[5],
+                    'Matched chains in the query PPI0 complex': result[2],
+                    'Matched chains in the target PPI1 complex': result[3],
+                }
+            else:
+                metrics = {}
+
+        return {'PPI0': ppi_id0, 'PPI1': ppi_id1} | metrics
 
 
 class SequenceIdentityComparator(PPIComparator):
