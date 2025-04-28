@@ -67,32 +67,35 @@ def download_from_zenodo(
             # Save under ppiref directory by default
             destination_folder = PPIREF_DATA_DIR / 'ppiref' / stem
 
-    # Check if the folder already exists
+    # Check if the folder and zip file already exist
+    zip_path = os.path.join(destination_folder, f'{stem}.zip')
     if (destination_folder).is_dir():
-        warnings.warn(f'{destination_folder} already exists. Skipping download.')
-        return
-    
-    # Create the folder
-    destination_folder.mkdir(parents=True, exist_ok=True)
+        if os.path.exists(zip_path):
+            warnings.warn(f'Found partially extracted data. Will try to finish extraction of {zip_path}.')
+        else:
+            warnings.warn(f'{destination_folder} already exists. Skipping download.')
+            return
+    else:
+        # Create the folder
+        destination_folder.mkdir(parents=True, exist_ok=True)
 
-    # Download the file with progress bar
-    response = requests.get(url, stream=True)
-    total_size_in_bytes= int(response.headers.get('content-length', 0))
-    block_size = 1024  # 1 Kibibyte
-    progress_bar = tqdm(total=total_size_in_bytes, desc=f'Downloading to {destination_folder}', unit='iB', unit_scale=True)
-    file_path = os.path.join(destination_folder, f'{stem}.zip')
-    with open(file_path, 'wb') as file:
-        for data in response.iter_content(block_size):
-            progress_bar.update(len(data))
-            file.write(data)
-    progress_bar.close()
+        # Download the file with progress bar
+        response = requests.get(url, stream=True)
+        total_size_in_bytes= int(response.headers.get('content-length', 0))
+        block_size = 1024  # 1 Kibibyte
+        progress_bar = tqdm(total=total_size_in_bytes, desc=f'Downloading to {destination_folder}', unit='iB', unit_scale=True)
+        with open(zip_path, 'wb') as file:
+            for data in response.iter_content(block_size):
+                progress_bar.update(len(data))
+                file.write(data)
+        progress_bar.close()
 
-    # Check if the download was successful
-    if total_size_in_bytes != 0 and progress_bar.n != total_size_in_bytes:
-        raise RuntimeError("Download failed. Please try to download the file manually.")
+        # Check if the download was successful
+        if total_size_in_bytes != 0 and progress_bar.n != total_size_in_bytes:
+            raise RuntimeError("Download failed. Please try to download the file manually.")
 
     # Extract the contents of the zip file with progress bar
-    with zipfile.ZipFile(file_path, 'r') as zip_ref:
+    with zipfile.ZipFile(zip_path, 'r') as zip_ref:
         # List of archive contents
         list_of_files = zip_ref.infolist()
         total_files = len(list_of_files)
@@ -103,4 +106,4 @@ def download_from_zenodo(
                 pbar.update(1)
 
     # Delete the zip file after extraction
-    os.remove(file_path)
+    os.remove(zip_path)
