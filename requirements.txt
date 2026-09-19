@@ -1,5 +1,5 @@
 # TODO It is probably not the minimal possible list
-anyio==3.6.2
+anyio  # unpinned: mcp (via gradio[mcp]) needs anyio>=4.5; not imported by this package
 appdirs==1.4.4
 appnope==0.1.3
 argon2-cffi==21.3.0
@@ -10,7 +10,7 @@ attrs==23.1.0
 backcall==0.2.0
 backports.functools-lru-cache==1.6.4
 beautifulsoup4==4.12.2
-biopandas==0.5.0.dev0
+biopandas==0.5.1  # graphein 1.7.7 needs biopandas>=0.5.1
 biopython==1.81
 bioservices==1.11.2
 bleach==6.0.0
@@ -18,7 +18,7 @@ cattrs==22.2.0
 certifi==2024.7.4
 cffi==1.15.1
 charset-normalizer==3.1.0
-click==8.1.3
+click  # unpinned: wandb needs click>=8.2; not imported by this package
 colorama==0.4.6
 colorlog==6.7.0
 contourpy==1.0.7
@@ -52,7 +52,7 @@ jedi==0.18.2
 Jinja2==3.1.2
 joblib==1.2.0
 jsonpointer==2.3
-jsonschema==4.17.3
+jsonschema  # unpinned: mcp needs jsonschema>=4.20
 jupyter==1.0.0
 jupyter_client==8.2.0
 jupyter-console==6.6.3
