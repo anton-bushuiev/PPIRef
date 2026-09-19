@@ -102,7 +102,7 @@ psutil==5.9.0
 ptyprocess==0.7.0
 pure-eval==0.2.2
 pycparser==2.21
-pydantic==1.10.8
+pydantic  # unpinned to allow pydantic v2 (not imported by this package; needed for modern gradio downstream)
 Pygments==2.15.1
 pyparsing==3.0.9
 pyrsistent==0.19.3
